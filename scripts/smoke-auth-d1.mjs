@@ -38,10 +38,11 @@ function cleanup() {
 }
 
 try {
-  const tables = execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('users','workspaces','workspace_members','sessions') ORDER BY name;");
+  const requiredTables = ["contract_files", "contracts", "sessions", "users", "workspace_members", "workspaces"];
+  const tables = execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('contract_files','contracts','users','workspaces','workspace_members','sessions') ORDER BY name;");
   const names = new Set(tables.map((row) => row.name));
-  for (const required of ["users", "workspaces", "workspace_members", "sessions"]) {
-    if (!names.has(required)) throw new Error(`Missing auth table: ${required}`);
+  for (const required of requiredTables) {
+    if (!names.has(required)) throw new Error(`Missing required D1 table: ${required}`);
   }
 
   const foreignKeyProblems = execute("PRAGMA foreign_key_check;");
@@ -60,7 +61,7 @@ try {
   }
 
   cleanup();
-  const leftovers = execute(`SELECT (SELECT COUNT(*) FROM users WHERE id = ${sql(userId)}) + (SELECT COUNT(*) FROM workspaces WHERE id = ${sql(workspaceId)}) + (SELECT COUNT(*) FROM sessions WHERE token_hash = ${sql(tokenHash)}) AS count;`);
+  const leftovers = execute(`SELECT (SELECT COUNT(*) FROM users WHERE id = ${sql(userId)}) + (SELECT COUNT(*) FROM workspaces WHERE id = ${sql(workspaceId)}) + (SELECT COUNT(*) FROM workspace_members WHERE user_id = ${sql(userId)}) + (SELECT COUNT(*) FROM sessions WHERE token_hash = ${sql(tokenHash)}) AS count;`);
   if (Number(leftovers[0]?.count ?? 0) !== 0) {
     throw new Error("Auth smoke cleanup/cascade verification left rows behind.");
   }
