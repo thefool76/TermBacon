@@ -15,8 +15,8 @@ export function SiteHeader() {
           {siteConfig.nav.map((item) => <Link key={item.href} href={item.href} className="rounded-md text-sm font-medium text-[#596660] hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f35]">{item.label}</Link>)}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
-          <Button variant="ghost" asChild><Link href="/app">Sign in</Link></Button>
-          <Button asChild><Link href="/app/upload">Start Free</Link></Button>
+          <Button variant="ghost" asChild><Link href="/sign-in">Sign in</Link></Button>
+          <Button asChild><Link href="/sign-in?next=/app/upload">Start Free</Link></Button>
         </div>
         <Sheet>
           <SheetTrigger asChild><Button className="md:hidden" size="icon" variant="outline" aria-label="Open navigation"><Menu aria-hidden="true" size={18} /></Button></SheetTrigger>
@@ -25,7 +25,7 @@ export function SiteHeader() {
             <nav aria-label="Mobile navigation" className="mt-10 flex flex-col gap-1">
               {siteConfig.nav.map((item) => <SheetClose asChild key={item.href}><Link href={item.href} className="rounded-lg px-3 py-3 text-base font-semibold hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f35]">{item.label}</Link></SheetClose>)}
             </nav>
-            <div className="mt-7 grid gap-2"><SheetClose asChild><Button variant="outline" asChild><Link href="/app">Sign in</Link></Button></SheetClose><SheetClose asChild><Button asChild><Link href="/app/upload">Start Free</Link></Button></SheetClose></div>
+            <div className="mt-7 grid gap-2"><SheetClose asChild><Button variant="outline" asChild><Link href="/sign-in">Sign in</Link></Button></SheetClose><SheetClose asChild><Button asChild><Link href="/sign-in?next=/app/upload">Start Free</Link></Button></SheetClose></div>
           </SheetContent>
         </Sheet>
       </div>

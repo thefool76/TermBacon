@@ -1,11 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  if (request.cookies.get("tb_workspace")) return NextResponse.next();
+const SESSION_COOKIE = "tb_session";
+const WORKSPACE_COOKIE = "tb_workspace";
+
+export function proxy(request: NextRequest) {
+  if (request.cookies.get(SESSION_COOKIE) || request.cookies.get(WORKSPACE_COOKIE)) {
+    return NextResponse.next();
+  }
 
   const response = NextResponse.redirect(request.nextUrl);
   response.cookies.set({
-    name: "tb_workspace",
+    name: WORKSPACE_COOKIE,
     value: crypto.randomUUID(),
     httpOnly: true,
     sameSite: "lax",
@@ -16,4 +21,4 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/app/:path*"] };
+export const config = { matcher: ["/app/:path*", "/sign-in"] };
