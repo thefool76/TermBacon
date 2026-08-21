@@ -6,7 +6,6 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "d1_databases": [{ "binding": "DB" }],
-  "r2_buckets": [{ "binding": "CONTRACTS" }],
   "ai": { "binding": "AI" },
   "observability": { "enabled": true },
   "vars": { "POLAR_SERVER": "sandbox" }

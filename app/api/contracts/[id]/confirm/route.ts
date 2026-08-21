@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { calculateCancelByDate } from "@/lib/demo-data";
-import { getWorkspaceId, saveConfirmedContract } from "@/lib/contract-store";
+import { getContractFileMetadata, getWorkspaceId, saveConfirmedContract } from "@/lib/contract-store";
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(new Date(`${value}T00:00:00Z`).getTime()), "Invalid date");
 const bodySchema = z.object({
-  fileKey: z.string().min(1),
-  fileName: z.string().min(1),
   vendor: z.string().trim().min(1).max(160),
   agreement: z.string().trim().min(1).max(240),
   renewalDate: dateSchema,
@@ -28,11 +26,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Review the highlighted fields before confirming." }, { status: 400 });
 
-  const input = parsed.data;
-  if (!input.fileKey.startsWith(`workspaces/${workspaceId}/contracts/${id}/`)) {
-    return NextResponse.json({ error: "Invalid contract file reference." }, { status: 400 });
-  }
+  const file = await getContractFileMetadata(id, workspaceId);
+  if (!file) return NextResponse.json({ error: "The uploaded agreement could not be found. Upload it again." }, { status: 404 });
 
+  const input = parsed.data;
   const cancelByDate = calculateCancelByDate(input.renewalDate, input.noticeDays);
   try {
     await saveConfirmedContract(workspaceId, {
@@ -45,8 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       cancelByDate,
       owner: input.owner,
       autoRenew: input.autoRenew,
-      fileKey: input.fileKey,
-      fileName: input.fileName,
+      fileName: file.file_name,
       sourcePage: input.sourcePage,
       sourceSection: input.sourceSection,
       sourceClause: input.sourceClause,

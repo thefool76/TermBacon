@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Resolve Cloudflare resources
+      - name: Resolve D1 database
         run: node scripts/prepare-cloudflare-resources.mjs
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

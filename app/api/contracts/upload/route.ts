@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { buildRenewalContext, extractionJsonSchema, normalizeSuggestedDate, parseExtractionResponse } from "@/lib/contract-extraction";
-import { ensureContractSchema, getWorkspaceId } from "@/lib/contract-store";
+import { ensureContractSchema, getWorkspaceId, storeContractFile } from "@/lib/contract-store";
 
-const MAX_FILE_BYTES = 15 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const workspaceId = await getWorkspaceId();
@@ -20,20 +20,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "TermBeacon currently accepts PDF agreements only." }, { status: 415 });
   }
   if (value.size <= 0 || value.size > MAX_FILE_BYTES) {
-    return NextResponse.json({ error: "PDFs must be between 1 byte and 15 MB." }, { status: 413 });
+    return NextResponse.json({ error: "PDFs must be between 1 byte and 10 MB." }, { status: 413 });
   }
 
   const env = await ensureContractSchema();
   const id = crypto.randomUUID();
-  const safeName = value.name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "agreement.pdf";
-  const fileKey = `workspaces/${workspaceId}/contracts/${id}/${safeName}`;
 
   try {
-    await env.CONTRACTS.put(fileKey, value.stream(), {
-      httpMetadata: { contentType: "application/pdf" },
-      customMetadata: { originalName: value.name },
-    });
-
     const convertedValue = await env.AI.toMarkdown(
       { name: value.name, blob: value },
       { conversionOptions: { pdf: { metadata: false }, output: { format: "text" } } },
@@ -61,10 +54,11 @@ export async function POST(request: Request) {
     });
     const extracted = parseExtractionResponse(aiResult);
 
+    await storeContractFile(id, workspaceId, value);
+
     return NextResponse.json({
       contract: {
         id,
-        fileKey,
         fileName: value.name,
         vendor: extracted.vendor || value.name.replace(/\.pdf$/i, ""),
         agreement: extracted.agreement || "Vendor agreement",
@@ -82,7 +76,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    await env.CONTRACTS.delete(fileKey);
     console.error(JSON.stringify({ event: "contract_extraction_failed", contractId: id, message: error instanceof Error ? error.message : "Unknown error" }));
     return NextResponse.json({ error: "We couldn't extract renewal terms from this PDF. Try another agreement or a text-based PDF." }, { status: 500 });
   }
