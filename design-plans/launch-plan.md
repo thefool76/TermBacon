@@ -2,9 +2,9 @@
 
 ## Product Goal
 
-Ship a focused B2B SaaS that makes one operational promise immediately understandable: TermBeacon shows the last day a team can still act before a vendor contract auto-renews.
+TermBeacon is a focused B2B SaaS that makes one operational promise immediately understandable: show the last day a team can still act before a vendor contract auto-renews.
 
-The product is intentionally narrower than a CLM or procurement suite. AI may suggest renewal-relevant terms, but the interface requires human confirmation before those terms become trusted product state. Confirmed renewal dates and notice periods drive a deterministic cancel-by date and a clear Renew / Renegotiate / Cancel workflow.
+The product is intentionally narrower than a CLM or procurement suite. AI may suggest renewal-relevant terms, but a person confirms those terms before they become trusted state. Confirmed renewal dates and notice periods drive a deterministic cancel-by date and a clear Renew / Renegotiate / Cancel workflow.
 
 ## Route Map
 
@@ -31,83 +31,104 @@ The product is intentionally narrower than a CLM or procurement suite. AI may su
 - Workers AI for PDF conversion and renewal-term extraction.
 - Google OAuth + D1-backed users, workspaces, memberships, and hashed sessions.
 - Polar billing scaffolding preserved for later activation.
-- GitHub Actions gates production with type-check, production build, migrations, remote D1 smoke tests, deploy, and OAuth-secret sync.
+- GitHub Actions gate production with type-check, extraction tests, production build, migrations, remote D1 auth smoke, Worker deploy, active-release verification, and OAuth secret handling.
 
 ## Signature Product UI
 
-- Reusable Escape Window on marketing and contract detail surfaces.
-- Decision Inbox focused on the few metrics needed to decide what needs attention next.
-- Source-clause verification beside extracted terms.
-- Human-confirmed Renew / Renegotiate / Cancel decisions.
+- Escape Window: Today → Cancel By → Renewal, days remaining, exposure, notice requirement, owner/source context, and date derivation.
+- Decision Inbox: focused operational view of what needs attention next.
+- Source verification: agreement clause beside extracted terms so confirmation never depends on opaque model output.
+- Human-controlled Renew / Renegotiate / Cancel decisions.
 - Real upload/review flow with durable ingestion states and retryable failures.
-- Shared product language and demo data where marketing proof requires deterministic examples.
 
-## Marketing Narrative
+## Landing Page Design State
 
-1. Persistent navigation with Product, How It Works, Security, Pricing, Sign in, and Start Free.
-2. Split hero with outcome-led copy and live Decision Inbox + Escape Window proof.
-3. Trust strip explaining the focused vendor-renewal category.
-4. Problem section teaching why renewal date ≠ decision deadline.
-5. Upload → Confirm → Decide workflow.
-6. Product-proof section for Decision Inbox and Escape Window.
-7. Source verification with clause highlight.
-8. Explainable renewal risk/deadline section.
-9. Conservative security/privacy section without unsupported certifications.
-10. Single-plan pricing and final outcome CTA.
+The homepage follows the owner-approved `DESIGN.md` and the mandatory GPT taste-skill process defined in `AGENTS.md`.
+
+Current landing architecture:
+
+1. Premium bounded navigation with Product, How It Works, Security, Pricing, Sign in, and Start Free.
+2. **Cinematic centered hero** with a 2–3 line outcome headline, exactly two acquisition CTAs, and live Escape Window/source proof integrated into the same composition.
+3. Three product-principle proof cells: source-backed, human-confirmed, deadline-first.
+4. Gapless 12-column teaching grid explaining why renewal date ≠ decision deadline (`7 + 5`, then `4 + 4 + 4`).
+5. Horizontal Upload → Verify → Protect workflow interaction.
+6. Pinned/stacked product proof showing Decision Inbox → Escape Window → source verification.
+7. Source-evidence rail using real demo agreement language rather than fabricated testimonials.
+8. Conservative security/privacy section without unsupported certifications.
+9. Single launch pricing plan.
+10. High-contrast final outcome CTA and compact footer.
+
+### Landing visual rules
+
+- Warm canvas, white product surfaces, ink/forest hierarchy, acid only for high-intent actions and small active accents.
+- Use the Inter-based stack defined in `DESIGN.md`.
+- Use real code-built product UI as primary visual proof.
+- No gradients, glassmorphism, glow, stock photography, decorative AI stars, fake logos, ratings, testimonials, certifications, or savings claims.
+- No cheap meta labels such as `SECTION 01` or `QUESTION 05`.
+- Marketing hero headings stay wide and within 2–3 lines.
+- Bento/grid geometry must have no accidental empty cells.
+- Avoid horizontal page overflow; intentional horizontal source rails may scroll within their own container.
+- `Start Free` remains limited to persistent navigation and pricing. Acquisition uses “Find My Cancel-By Dates” and “See the Escape Window.”
+
+### Motion
+
+- Real GSAP + ScrollTrigger is used only for landing-page scroll choreography.
+- Motion is constrained by `DESIGN.md`: transform and opacity only, restrained corporate behavior, and no autoplay distraction.
+- Card stacking and desktop scroll pinning are progressive enhancement; content remains fully readable without JavaScript.
+- `prefers-reduced-motion` removes nonessential GSAP/CSS movement.
+- Hover feedback stays short and product-like.
 
 ## Product Shell
 
 - `/app`: prioritize decisions by cancel-by date.
 - `/app/contracts`: URL-backed status filters and search query.
-- `/app/contracts/[id]`: make Escape Window the primary surface, followed by decision actions and source verification.
+- `/app/contracts/[id]`: Escape Window first, then decision actions and source verification.
 - `/app/upload`: accept a real PDF, persist it, extract renewal terms, require review, and only then confirm trusted terms.
-- Use mobile-specific stacked rows instead of squeezing desktop tables.
+- Mobile uses purpose-built stacked rows instead of squeezed desktop tables.
 
-### Contract ingestion states
+## Contract Ingestion
 
-The durable ingestion lifecycle is:
+Durable lifecycle:
 
 `uploaded → processing → needs_review | extraction_failed → confirmed | archived`
 
 Rules:
 
-- Persist the PDF before extraction so a failed extraction remains retryable.
+- Persist the PDF before extraction so failures remain retryable.
 - Deduplicate by SHA-256 within the workspace.
 - Prefer unknown/null over unsupported AI guesses.
 - Verify source evidence against converted agreement text.
 - Low-confidence or incomplete critical terms require manual review.
-- Human confirmation is the boundary between AI suggestions and trusted contract state.
+- Human confirmation is the boundary between AI suggestion and trusted contract state.
 
 ## Authentication & Workspaces
 
-- Google OAuth is used for identity.
-- D1 stores users, workspaces, workspace memberships, and hashed session tokens.
+- Google OAuth provides identity.
+- D1 stores users, workspaces, memberships, and hashed session tokens.
 - Google access/refresh tokens are not persisted.
-- Once authentication is enforced, contract authorization resolves from the validated D1 session/workspace rather than trusting an anonymous workspace cookie.
-- Existing anonymous browser data can be claimed into the first signed-in workspace when safe.
+- Once auth is enforced, contract authorization resolves from the validated D1 session/workspace rather than the legacy anonymous workspace cookie.
+- Existing anonymous browser data may be claimed into the first signed-in workspace when safe.
 
 ## SEO & Metadata
 
-- Configure `metadataBase` from `NEXT_PUBLIC_SITE_URL` with a localhost development fallback.
-- Keep one title template and stable description defaults in the root layout.
-- Keep homepage canonical, Open Graph URL/title/description, and Twitter metadata.
-- Keep icon, dynamic Open Graph image, robots, sitemap, and manifest routes.
-- Keep `/app/*` and `/sign-in` noindex/nofollow and out of the sitemap.
-- Render only Organization and SoftwareApplication JSON-LD properties that match public product copy.
-- Use “TermBeacon” consistently in public metadata even though the repository slug remains `TermBacon`.
+- `metadataBase` comes from `NEXT_PUBLIC_SITE_URL` with a localhost development fallback.
+- Homepage canonical, Open Graph and Twitter metadata remain stable.
+- Icon, dynamic Open Graph image, robots, sitemap, and manifest routes remain public.
+- `/app/*` and `/sign-in` remain noindex/nofollow and outside the sitemap.
+- Organization and SoftwareApplication structured data must match public product claims.
+- Public naming is always **TermBeacon**, never the repository slug `TermBacon`.
 
-## Accessibility & Motion
+## Accessibility
 
 - Keep a visible-on-focus skip link and hierarchical headings.
 - Use links for navigation and buttons for actions.
-- Ensure every form control has a label and every icon-only control has an accessible name.
+- Every form control needs a label; icon-only controls need accessible names.
 - Use focus-visible rings on interactive controls.
-- Use Radix-backed shadcn Dialog, Sheet, Dropdown Menu, Tooltip, Tabs, Accordion, Progress, Label, and Separator where those interaction patterns are needed.
-- Restrict motion to transform/opacity for entrances and small directional affordances.
-- Honor `prefers-reduced-motion` globally.
-- Keep hover feedback short and consistent; avoid autoplay or looping attention effects around pricing and conversion surfaces.
+- Mobile navigation remains a keyboard-accessible Radix Sheet.
+- Product dialogs/menus use existing Radix-backed primitives.
+- Browser checks should include keyboard navigation and reduced-motion behavior.
 
-## Analytics Events
+## Analytics Event Contract
 
 | Event | Trigger | Properties |
 | --- | --- | --- |
@@ -124,68 +145,22 @@ Rules:
 
 The event contract remains provider-neutral until an analytics provider is intentionally selected.
 
-## Launch Checklist
+## Production Validation
 
-### Product & Copy
-
-- [x] Primary positioning says “Stop contracts from renewing before you decide.”
-- [x] Primary conversion CTA says “Find My Cancel-By Dates.”
-- [x] Secondary CTA says “See the Escape Window.”
-- [x] “Start Free” is limited to navigation/pricing contexts.
-- [x] AI is framed as suggestion + confirmation, not an autonomous decision maker.
-- [x] No generic contract chatbot or legal-risk score exists.
-- [x] No fake social proof or security certification is rendered.
-
-### Core Product
-
-- [x] Signature Escape Window exists on marketing and product detail surfaces.
-- [x] Decision Inbox uses a focused operational hierarchy.
-- [x] Source clause sits beside extracted terms.
-- [x] Real PDF ingestion is live.
-- [x] Failed extraction remains retryable from the stored PDF.
-- [x] Duplicate PDF uploads are detected by workspace-scoped SHA-256.
-- [x] Low-confidence/incomplete terms require review.
-- [x] Confirmation produces a deterministic cancel-by date.
-- [x] Decisions persist in D1.
-- [x] Google OAuth and durable workspaces are live.
-
-### Accessibility
-
-- [x] Skip link is present.
-- [x] Focus-visible styles are defined for custom interactive controls.
-- [x] Mobile navigation uses a keyboard-accessible Sheet.
-- [x] Dialogs are keyboard/focus managed by the shared primitive.
-- [x] Form inputs are labeled.
-- [x] Async upload/review states use accessible status/error messaging.
-- [x] Reduced-motion behavior is defined.
-
-### SEO
-
-- [x] Metadata API used.
-- [x] `metadataBase` configurable through `NEXT_PUBLIC_SITE_URL`.
-- [x] Canonical homepage metadata exists.
-- [x] Open Graph and Twitter cards configured.
-- [x] Dynamic Open Graph image exists.
-- [x] Icon and manifest routes exist.
-- [x] Robots and sitemap routes exist.
-- [x] Private product shell is noindex/nofollow.
-- [x] Structured data avoids ratings, reviews, customer counts, certifications, and other unsupported claims.
-
-### Production Validation
-
-Current GitHub Actions deployment should not be treated as successful until both status contexts are green:
+Do not treat a production push as complete until both GitHub status contexts are green:
 
 - `termbeacon/predeploy-ok`
 - `termbeacon/deploy-ok`
 
-The predeploy gate covers TypeScript, extraction tests, production Next.js build, D1 migrations, and remote D1 auth smoke validation. The deploy gate covers the Cloudflare Worker deployment and OAuth secret synchronization.
+The predeploy gate covers TypeScript, extraction tests, production Next.js build, D1 migrations, and remote D1 auth smoke validation. The deploy gate covers secret handling, Worker deployment, and verification that the public `workers.dev` page is serving the exact Git release marker.
 
-Browser-level checks remain necessary for user-facing changes:
+For meaningful landing UI changes also check:
 
-- [ ] Test 320, 375, 768, 1024, and 1440 CSS-pixel widths after meaningful UI changes.
-- [ ] Complete keyboard-only pass for navigation, dialogs, dropdowns, and upload/review flow.
-- [ ] Complete browser `prefers-reduced-motion` pass after motion changes.
-- [ ] Smoke-test `/api/health`, authentication, a real PDF upload, extraction review, confirmation, decision persistence, sign-out, and sign-in after core-flow changes.
+- 320, 375, 768, 1024, and 1440 CSS-pixel widths.
+- Keyboard-only navigation and focus-visible behavior.
+- Browser `prefers-reduced-motion` behavior.
+- No horizontal page overflow.
+- Live Worker homepage shows the intended hero/product proof after deploy.
 
 ## Near-Term Roadmap
 
@@ -205,15 +180,7 @@ Browser-level checks remain necessary for user-facing changes:
 - Onboarding and empty-state refinement.
 - Extraction evaluation corpus with representative vendor agreements and measured field-level accuracy.
 
-### After Product-Market Evidence
-
-- Bulk import and vendor normalization.
-- Approval workflows for higher-exposure renewals.
-- Renewal calendar and exported decision history.
-- Role-based permissions and richer audit logging.
-- Procurement/finance integrations justified by actual customer workflows.
-
-### Explicitly Not On The Near-Term Roadmap
+### Explicitly Not Near-Term
 
 - Generic “chat with contracts.”
 - General-purpose CLM authoring/redlining.
