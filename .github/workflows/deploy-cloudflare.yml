@@ -57,6 +57,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_RELEASE_SHA: ${{ github.sha }}
 
       - name: Apply D1 migrations
         id: migrations
@@ -115,14 +116,6 @@ jobs:
             "https://api.github.com/repos/$REPOSITORY/statuses/$SHA" \
             -d "{\"state\":\"$STATE\",\"context\":\"$CONTEXT\",\"description\":\"$DESCRIPTION\"}"
 
-      - name: Deploy to Cloudflare
-        id: worker_deploy
-        run: npm run deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
-
       - name: Sync Google OAuth secrets when configured
         id: oauth_secrets
         env:
@@ -145,28 +138,68 @@ jobs:
           NODE
           npx wrangler secret bulk .auth-secrets.json
 
+      - name: Deploy current code to Cloudflare
+        id: worker_deploy
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_RELEASE_SHA: ${{ github.sha }}
+
+      - name: Verify active workers.dev release
+        id: production_smoke
+        env:
+          WORKER_URL: https://termbeacon.sumitmishra1135.workers.dev
+          EXPECTED_RELEASE: ${{ github.sha }}
+        run: |
+          BODY="$(mktemp)"
+          trap 'rm -f "$BODY"' EXIT
+
+          for attempt in 1 2 3 4 5; do
+            if curl --fail --silent --show-error --location \
+              -H "Cache-Control: no-cache" \
+              "${WORKER_URL}/?release=${EXPECTED_RELEASE}&attempt=${attempt}" \
+              -o "$BODY"; then
+              if grep -Fq "data-release=\"${EXPECTED_RELEASE}\"" "$BODY"; then
+                echo "Verified ${WORKER_URL} is serving release ${EXPECTED_RELEASE}."
+                exit 0
+              fi
+            fi
+
+            echo "Current release marker not visible yet (attempt ${attempt}/5)."
+            sleep 5
+          done
+
+          echo "::error::${WORKER_URL} did not serve release ${EXPECTED_RELEASE}."
+          exit 1
+
       - name: Publish production deployment status
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-          DEPLOY_OUTCOME: ${{ steps.worker_deploy.outcome }}
           SECRETS_OUTCOME: ${{ steps.oauth_secrets.outcome }}
+          DEPLOY_OUTCOME: ${{ steps.worker_deploy.outcome }}
+          PRODUCTION_SMOKE_OUTCOME: ${{ steps.production_smoke.outcome }}
           REPOSITORY: ${{ github.repository }}
           SHA: ${{ github.sha }}
         run: |
           STATE="failure"
           CONTEXT="termbeacon/deploy-incomplete"
           DESCRIPTION="Production deployment did not complete"
-          if [ "$DEPLOY_OUTCOME" != "success" ]; then
+          if [ "$SECRETS_OUTCOME" != "success" ]; then
+            CONTEXT="termbeacon/deploy-oauth-secrets"
+            DESCRIPTION="OAuth secret sync failed before code deployment"
+          elif [ "$DEPLOY_OUTCOME" != "success" ]; then
             CONTEXT="termbeacon/deploy-worker"
             DESCRIPTION="Cloudflare Worker deployment failed"
-          elif [ "$SECRETS_OUTCOME" != "success" ]; then
-            CONTEXT="termbeacon/deploy-oauth-secrets"
-            DESCRIPTION="Worker deployed but OAuth secret sync failed"
+          elif [ "$PRODUCTION_SMOKE_OUTCOME" != "success" ]; then
+            CONTEXT="termbeacon/deploy-production-smoke"
+            DESCRIPTION="workers.dev is not serving this Git commit"
           else
             STATE="success"
             CONTEXT="termbeacon/deploy-ok"
-            DESCRIPTION="Worker deployed and OAuth secrets synced"
+            DESCRIPTION="Worker deployed and workers.dev serves this exact Git release"
           fi
           curl --fail-with-body --silent --show-error \
             -X POST \
