@@ -1,5 +1,20 @@
 import Link from "next/link";
 
 export function SiteFooter() {
-  return <footer className="border-t border-line bg-white"><div className="mx-auto grid max-w-7xl gap-7 px-4 py-9 text-sm sm:px-6 md:grid-cols-[1fr_auto] md:items-end lg:px-8"><div><p className="font-semibold text-ink" translate="no">TermBeacon</p><p className="mt-2 max-w-md text-xs leading-5 text-muted-ink">Vendor-renewal decisions organized around the last actionable cancel-by date.</p></div><div className="flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-muted-ink"><Link className="rounded-sm hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest" href="/app">Product</Link><a className="rounded-sm hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest" href="#security">Security</a><a className="rounded-sm hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest" href="#pricing">Pricing</a><span>© 2026 TermBeacon</span></div></div></footer>;
+  return (
+    <footer className="border-t border-[#29483f] bg-forest text-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto] md:items-end lg:px-8">
+        <div>
+          <p className="text-lg font-semibold tracking-[-0.035em]" translate="no">TermBeacon</p>
+          <p className="mt-3 max-w-lg text-sm leading-6 text-[#c3d4ce]">Vendor-renewal decisions organized around the last actionable cancel-by date, its source terms, exposure and owner.</p>
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-[#c3d4ce]">
+          <Link className="rounded-sm transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acid" href="/app">Product</Link>
+          <a className="rounded-sm transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acid" href="#security">Security</a>
+          <a className="rounded-sm transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acid" href="#pricing">Pricing</a>
+          <span>© 2026 TermBeacon</span>
+        </div>
+      </div>
+    </footer>
+  );
 }
