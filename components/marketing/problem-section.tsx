@@ -1,24 +1,29 @@
-import { ArrowDown, Minus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export function ProblemSection() {
   return (
-    <section className="border-b border-[#dfe4df] py-20 sm:py-24">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#3e7163]">The Problem</p>
-          <h2 className="mt-4 max-w-xl text-balance text-3xl font-semibold tracking-[-0.045em] sm:text-4xl">The renewal date can already be too late.</h2>
-          <p className="mt-5 max-w-xl text-pretty leading-7 text-[#65716b]">A contract that renews November 1 may require cancellation notice by September 2. Miss that earlier date and the team may lose its cleanest chance to act before another annual commitment begins.</p>
+    <section className="border-b border-line py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[.78fr_1.22fr] lg:items-end">
+          <div>
+            <h2 className="max-w-2xl text-balance text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">A renewal date can be weeks too late to matter.</h2>
+          </div>
+          <p className="max-w-2xl text-pretty leading-7 text-muted-ink lg:justify-self-end">The date on the invoice is not the date your team controls. A notice clause can close the clean exit window long before the contract renews.</p>
         </div>
-        <div className="rounded-xl border border-line bg-white p-5 sm:p-6">
-          <Equation label="Renewal Date" value="Nov 1" />
-          <div className="my-3 flex items-center gap-3 text-[#87908c]"><Minus aria-hidden="true" size={16} /><span className="text-xs font-semibold uppercase tracking-[0.08em]">minus</span></div>
-          <Equation label="Notice Period" value="60 days" />
-          <div className="my-4 flex justify-center text-[#68756f]"><ArrowDown aria-hidden="true" size={18} /></div>
-          <div className="rounded-lg border border-[#edd0ca] bg-[#fff4f1] p-4"><p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#a43727]">Last Day To Act</p><p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[#8f3022] tabular-nums">Sep 2</p></div>
+
+        <div className="mt-12 grid grid-flow-dense gap-3 lg:grid-cols-12">
+          <DeadlineBlock className="lg:col-span-4" label="Contract renews" value="Nov 1" detail="The date everyone remembers." />
+          <DeadlineBlock className="lg:col-span-3" label="Notice required" value="60 days" detail="The clause that changes the timeline." />
+          <div className="lg:col-span-5 border border-forest bg-forest p-6 text-white sm:p-7">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-[#c9ddd5]">Last actionable day</p><p className="mt-3 text-5xl font-semibold tracking-[-0.055em] tabular-nums sm:text-6xl">Sep 2</p></div><ArrowRight aria-hidden="true" className="text-acid" size={23} /></div>
+            <p className="mt-6 max-w-sm text-sm leading-6 text-[#c9d8d2]">That earlier date is the Escape Window TermBeacon protects.</p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function Equation({ label, value }: { label: string; value: string }) { return <div className="flex items-end justify-between gap-4 rounded-lg bg-[#f6f7f3] p-4"><p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7b8580]">{label}</p><p className="text-2xl font-semibold tracking-[-0.03em] tabular-nums">{value}</p></div>; }
+function DeadlineBlock({ className, label, value, detail }: { className?: string; label: string; value: string; detail: string }) {
+  return <div className={`${className ?? ""} border border-line bg-white p-6 sm:p-7`}><p className="text-sm font-semibold text-muted-ink">{label}</p><p className="mt-3 text-4xl font-semibold tracking-[-0.045em] text-ink tabular-nums">{value}</p><p className="mt-5 text-sm leading-6 text-muted-ink">{detail}</p></div>;
+}

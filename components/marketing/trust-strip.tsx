@@ -1,11 +1,9 @@
-import { Check, FileCheck2, ShieldCheck } from "lucide-react";
-
 const proofs = [
-  { icon: FileCheck2, label: "Source-Backed Terms" },
-  { icon: Check, label: "Human-Confirmed Extraction" },
-  { icon: ShieldCheck, label: "Explainable Deadlines" },
-];
+  ["Source-backed", "Every suggested term stays tied to the clause that supports it."],
+  ["Human-confirmed", "AI output does not become trusted state until a person reviews it."],
+  ["Deterministic", "Cancel-by dates come from confirmed dates and notice periods."],
+] as const;
 
 export function TrustStrip() {
-  return <section aria-label="Product trust" className="border-b border-[#dfe4df] bg-white"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><p className="text-sm font-semibold text-[#26352f]">Built for vendor renewals—not generic contract management.</p><div className="flex flex-wrap gap-x-6 gap-y-3">{proofs.map((proof) => <span key={proof.label} className="inline-flex items-center gap-2 text-xs font-semibold text-[#68746e]"><proof.icon aria-hidden="true" size={15} className="text-[#315f52]" />{proof.label}</span>)}</div></div></section>;
+  return <section aria-label="Product trust" className="border-b border-line bg-white"><div className="mx-auto grid max-w-7xl gap-0 px-4 sm:px-6 md:grid-cols-3 lg:px-8">{proofs.map(([title, text]) => <div key={title} className="border-b border-line py-6 last:border-b-0 md:border-b-0 md:border-r md:px-7 md:first:pl-0 md:last:border-r-0 md:last:pr-0"><p className="text-sm font-semibold text-ink">{title}</p><p className="mt-1.5 text-xs leading-5 text-muted-ink">{text}</p></div>)}</div></section>;
 }
