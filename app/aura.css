@@ -1,3 +1,21 @@
+body {
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.14);
+}
+
+::selection {
+  background: #f97316;
+  color: #000000;
+}
+
+.skip-link {
+  background: #000000;
+  color: #ffffff;
+}
+
+.skip-link:focus-visible {
+  outline-color: #f97316;
+}
+
 .aura-landing {
   --aura-primary: #f97316;
   --aura-accent: #fb923c;
