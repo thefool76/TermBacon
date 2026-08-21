@@ -126,6 +126,60 @@ section[id],
 .reveal-delay-2 { animation-delay: 80ms; }
 .reveal-delay-3 { animation-delay: 120ms; }
 
+.workflow-panel {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.workflow-detail {
+  opacity: 0.72;
+  transform: translateY(3px);
+  transition:
+    opacity var(--motion-interaction) var(--ease-product),
+    transform var(--motion-interaction) var(--ease-product);
+}
+
+.workflow-panel:hover .workflow-detail,
+.workflow-panel:focus-within .workflow-detail,
+.workflow-panel:focus .workflow-detail {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.evidence-rail {
+  scrollbar-width: thin;
+  scrollbar-color: #9eaaa4 transparent;
+}
+
+.evidence-rail::-webkit-scrollbar {
+  height: 8px;
+}
+
+.evidence-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.evidence-rail::-webkit-scrollbar-thumb {
+  background: #9eaaa4;
+  border-radius: 999px;
+}
+
+.js-stack-card {
+  transform-origin: top center;
+}
+
+@media (min-width: 1024px) {
+  .workflow-rail:hover .workflow-panel {
+    flex-grow: 0.82;
+  }
+
+  .workflow-rail .workflow-panel:hover,
+  .workflow-rail .workflow-panel:focus-within,
+  .workflow-rail .workflow-panel:focus {
+    flex-grow: 1.36;
+  }
+}
+
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -172,5 +226,9 @@ section[id],
   .reveal-delay-2,
   .reveal-delay-3 {
     animation: none;
+  }
+  .workflow-detail {
+    opacity: 1;
+    transform: none;
   }
 }
