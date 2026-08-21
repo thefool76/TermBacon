@@ -48,7 +48,7 @@ export default function Home() {
   return (
     <>
       <SiteHeader />
-      <main id="main-content">
+      <main id="main-content" data-release={process.env.NEXT_PUBLIC_RELEASE_SHA ?? "development"}>
         <Hero />
         <TrustStrip />
         <ProblemSection />
