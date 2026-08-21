@@ -116,7 +116,7 @@ jobs:
             "https://api.github.com/repos/$REPOSITORY/statuses/$SHA" \
             -d "{\"state\":\"$STATE\",\"context\":\"$CONTEXT\",\"description\":\"$DESCRIPTION\"}"
 
-      - name: Sync Google OAuth secrets when configured
+      - name: Ensure Google OAuth secrets are configured
         id: oauth_secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -125,10 +125,28 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           if [ -z "${GOOGLE_CLIENT_ID:-}" ] || [ -z "${GOOGLE_CLIENT_SECRET:-}" ]; then
-            echo "Google OAuth secrets are not configured in GitHub yet; auth stays in temporary-workspace mode."
+            echo "Google OAuth secrets are not configured in GitHub; preserving the Worker's current secret state."
             exit 0
           fi
-          trap 'rm -f .auth-secrets.json' EXIT
+
+          trap 'rm -f .existing-secrets.json .auth-secrets.json' EXIT
+
+          npx wrangler secret list --format json > .existing-secrets.json
+
+          if node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
+          const entries = JSON.parse(readFileSync(".existing-secrets.json", "utf8"));
+          const names = new Set(entries.map((entry) => entry.name));
+          const configured = names.has("GOOGLE_CLIENT_ID") && names.has("GOOGLE_CLIENT_SECRET");
+          console.log(configured
+            ? "Google OAuth Worker secrets already exist; leaving them unchanged."
+            : "One or more Google OAuth Worker secrets are missing; provisioning them now.");
+          process.exit(configured ? 0 : 1);
+          NODE
+          then
+            exit 0
+          fi
+
           node --input-type=module <<'NODE'
           import { writeFileSync } from "node:fs";
           writeFileSync(".auth-secrets.json", JSON.stringify({
@@ -136,6 +154,7 @@ jobs:
             GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
           }));
           NODE
+
           npx wrangler secret bulk .auth-secrets.json
 
       - name: Deploy current code to Cloudflare
@@ -147,31 +166,47 @@ jobs:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_RELEASE_SHA: ${{ github.sha }}
 
-      - name: Verify active workers.dev release
+      - name: Verify active workers.dev Aura release
         id: production_smoke
         env:
           WORKER_URL: https://termbeacon.sumitmishra1135.workers.dev
           EXPECTED_RELEASE: ${{ github.sha }}
+          EXPECTED_HERO: Vendor renewal control / 2026
         run: |
           BODY="$(mktemp)"
           trap 'rm -f "$BODY"' EXIT
 
-          for attempt in 1 2 3 4 5; do
+          for attempt in $(seq 1 12); do
             if curl --fail --silent --show-error --location \
-              -H "Cache-Control: no-cache" \
-              "${WORKER_URL}/?release=${EXPECTED_RELEASE}&attempt=${attempt}" \
+              -H "Cache-Control: no-cache, no-store, max-age=0" \
+              -H "Pragma: no-cache" \
+              "${WORKER_URL}/?release=${EXPECTED_RELEASE}&attempt=${attempt}&ts=$(date +%s)" \
               -o "$BODY"; then
+              HAS_RELEASE="no"
+              HAS_AURA="no"
+
               if grep -Fq "data-release=\"${EXPECTED_RELEASE}\"" "$BODY"; then
-                echo "Verified ${WORKER_URL} is serving release ${EXPECTED_RELEASE}."
+                HAS_RELEASE="yes"
+              fi
+
+              if grep -Fq "$EXPECTED_HERO" "$BODY"; then
+                HAS_AURA="yes"
+              fi
+
+              if [ "$HAS_RELEASE" = "yes" ] && [ "$HAS_AURA" = "yes" ]; then
+                echo "Verified ${WORKER_URL} serves release ${EXPECTED_RELEASE} with the Aura landing hero."
                 exit 0
               fi
+
+              echo "Attempt ${attempt}/12: release=${HAS_RELEASE}, aura_hero=${HAS_AURA}."
+            else
+              echo "Attempt ${attempt}/12: homepage request failed."
             fi
 
-            echo "Current release marker not visible yet (attempt ${attempt}/5)."
             sleep 5
           done
 
-          echo "::error::${WORKER_URL} did not serve release ${EXPECTED_RELEASE}."
+          echo "::error::${WORKER_URL} did not serve release ${EXPECTED_RELEASE} with the Aura landing fingerprint."
           exit 1
 
       - name: Publish production deployment status
@@ -189,17 +224,17 @@ jobs:
           DESCRIPTION="Production deployment did not complete"
           if [ "$SECRETS_OUTCOME" != "success" ]; then
             CONTEXT="termbeacon/deploy-oauth-secrets"
-            DESCRIPTION="OAuth secret sync failed before code deployment"
+            DESCRIPTION="OAuth secret verification/provisioning failed before code deployment"
           elif [ "$DEPLOY_OUTCOME" != "success" ]; then
             CONTEXT="termbeacon/deploy-worker"
             DESCRIPTION="Cloudflare Worker deployment failed"
           elif [ "$PRODUCTION_SMOKE_OUTCOME" != "success" ]; then
             CONTEXT="termbeacon/deploy-production-smoke"
-            DESCRIPTION="workers.dev is not serving this Git commit"
+            DESCRIPTION="workers.dev is not serving this Aura Git release"
           else
             STATE="success"
             CONTEXT="termbeacon/deploy-ok"
-            DESCRIPTION="Worker deployed and workers.dev serves this exact Git release"
+            DESCRIPTION="Worker serves this exact Git release with the Aura landing page"
           fi
           curl --fail-with-body --silent --show-error \
             -X POST \
