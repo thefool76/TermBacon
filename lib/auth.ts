@@ -60,9 +60,9 @@ const googleProfileSchema = z.object({
   sub: z.string().min(1),
   email: z.string().email(),
   email_verified: z.boolean(),
-  name: z.string().optional().default(""),
-  given_name: z.string().optional().default(""),
-  picture: z.string().url().optional().default(""),
+  name: z.string().nullish().transform((value) => value ?? ""),
+  given_name: z.string().nullish().transform((value) => value ?? ""),
+  picture: z.string().url().nullish().transform((value) => value ?? ""),
 });
 
 type GoogleProfile = z.infer<typeof googleProfileSchema>;
@@ -86,6 +86,17 @@ export type AuthSession = {
 
 export function isGoogleAuthConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim());
+}
+
+export async function isAuthEnforced() {
+  if (isGoogleAuthConfigured()) return true;
+  try {
+    const env = (await getCloudflareContext({ async: true })).env;
+    const row = await env.DB.prepare("SELECT 1 AS present FROM users LIMIT 1").first<{ present: number }>();
+    return Boolean(row?.present);
+  } catch {
+    return false;
+  }
 }
 
 function getGoogleConfig() {

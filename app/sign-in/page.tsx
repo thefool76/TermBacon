@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, CalendarClock, FileCheck2, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getCurrentSession, isGoogleAuthConfigured, sanitizeNextPath } from "@/lib/auth";
+import { getCurrentSession, isAuthEnforced, isGoogleAuthConfigured, sanitizeNextPath } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -25,6 +26,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   if (session) redirect(nextPath);
 
   const configured = isGoogleAuthConfigured();
+  const authRequired = await isAuthEnforced();
   const errorMessage = params.error ? errors[params.error] : null;
 
   return (
@@ -65,6 +67,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
                   Continue with Google <ArrowRight aria-hidden="true" size={16} />
                 </Link>
               </Button>
+            ) : authRequired ? (
+              <div className="mt-6 rounded-lg border border-[#e6c6c0] bg-[#fff8f6] p-4 text-sm leading-6 text-[#6b514b]">
+                Sign-in is temporarily unavailable because the Google OAuth secrets are missing from this deployment. Existing workspaces remain locked rather than falling back to anonymous access.
+              </div>
             ) : (
               <div className="mt-6">
                 <Button disabled size="lg" className="w-full">Google sign-in setup pending</Button>
@@ -82,6 +88,6 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   );
 }
 
-function TrustPoint({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+function TrustPoint({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return <div className="rounded-xl border border-[#dce2dd] bg-white p-4"><p className="flex items-center gap-2 text-sm font-semibold text-[#23493f]">{icon}{title}</p><p className="mt-2 text-xs leading-5 text-[#717c76]">{body}</p></div>;
 }

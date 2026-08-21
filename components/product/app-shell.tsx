@@ -16,7 +16,7 @@ const nav = [
 
 type Identity = { name: string; email: string; workspaceName: string };
 
-export function AppShell({ children, identity, authConfigured }: { children: ReactNode; identity: Identity | null; authConfigured: boolean }) {
+export function AppShell({ children, identity, authRequired }: { children: ReactNode; identity: Identity | null; authRequired: boolean }) {
   const pathname = usePathname();
   const isActive = (href: string) => href === "/app" ? pathname === href : pathname.startsWith(href);
 
@@ -30,7 +30,7 @@ export function AppShell({ children, identity, authConfigured }: { children: Rea
         <div className="mt-auto">
           <Separator className="mb-3" />
           <div className="flex min-h-10 items-center gap-3 px-3 text-sm font-medium text-[#8a938f]"><Settings aria-hidden="true" size={16} />Settings <span className="ml-auto text-[10px] uppercase tracking-[0.08em]">Soon</span></div>
-          <div className="mt-2">{identity ? <AccountMenu identity={identity} /> : <TemporaryWorkspace authConfigured={authConfigured} />}</div>
+          <div className="mt-2">{identity ? <AccountMenu identity={identity} /> : <TemporaryWorkspace authRequired={authRequired} />}</div>
         </div>
       </aside>
 
@@ -78,11 +78,11 @@ function AccountMenu({ identity, compact = false }: { identity: Identity; compac
   );
 }
 
-function TemporaryWorkspace({ authConfigured }: { authConfigured: boolean }) {
+function TemporaryWorkspace({ authRequired }: { authRequired: boolean }) {
   return (
     <Link href="/sign-in" className="block rounded-lg border border-[#dce2dd] bg-white p-3 hover:border-[#bdc8c1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f35]">
       <p className="text-xs font-semibold">Temporary workspace</p>
-      <p className="mt-1 text-[11px] leading-4 text-[#7a8580]">{authConfigured ? "Sign in to keep access." : "Google sign-in setup pending."}</p>
+      <p className="mt-1 text-[11px] leading-4 text-[#7a8580]">{authRequired ? "Sign in to keep access." : "Google sign-in setup pending."}</p>
     </Link>
   );
 }

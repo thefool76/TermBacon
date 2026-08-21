@@ -1,7 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { ANON_WORKSPACE_COOKIE, getCurrentSession, isGoogleAuthConfigured } from "@/lib/auth";
+import { ANON_WORKSPACE_COOKIE, getCurrentSession, isAuthEnforced } from "@/lib/auth";
 import type { Contract, Decision } from "@/lib/demo-data";
 
 const FILE_CHUNK_BYTES = 1024 * 1024;
@@ -12,7 +12,7 @@ const schemaSql = `CREATE TABLE IF NOT EXISTS contracts (id TEXT PRIMARY KEY, wo
 export async function getWorkspaceId() {
   const session = await getCurrentSession();
   if (session) return session.workspace.id;
-  if (isGoogleAuthConfigured()) return null;
+  if (await isAuthEnforced()) return null;
   return (await cookies()).get(ANON_WORKSPACE_COOKIE)?.value ?? null;
 }
 

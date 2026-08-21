@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/product/app-shell";
-import { getCurrentSession, isGoogleAuthConfigured } from "@/lib/auth";
+import { getCurrentSession, isAuthEnforced } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Workspace",
@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ProductLayout({ children }: { children: ReactNode }) {
-  const authConfigured = isGoogleAuthConfigured();
+  const authRequired = await isAuthEnforced();
   const session = await getCurrentSession();
 
-  if (authConfigured && !session) redirect("/sign-in?next=/app");
+  if (authRequired && !session) redirect("/sign-in?next=/app");
 
   return (
     <AppShell
-      authConfigured={authConfigured}
+      authRequired={authRequired}
       identity={session ? {
         name: session.user.name,
         email: session.user.email,
