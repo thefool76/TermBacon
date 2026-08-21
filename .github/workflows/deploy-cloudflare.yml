@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: termbeacon-production
@@ -56,6 +57,36 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke-test remote D1 auth session
+        id: auth_smoke
+        run: node scripts/smoke-auth-d1.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Publish D1 auth smoke status
+        if: always() && steps.auth_smoke.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMOKE_OUTCOME: ${{ steps.auth_smoke.outcome }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$SMOKE_OUTCOME" = "success" ]; then
+            STATE="success"
+            DESCRIPTION="Remote D1 auth session smoke test passed"
+          else
+            STATE="failure"
+            DESCRIPTION="Remote D1 auth session smoke test failed"
+          fi
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$REPOSITORY/statuses/$SHA" \
+            -d "{\"state\":\"$STATE\",\"context\":\"termbeacon/auth-smoke\",\"description\":\"$DESCRIPTION\"}"
 
       - name: Sync Google OAuth secrets when configured
         env:

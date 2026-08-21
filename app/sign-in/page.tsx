@@ -6,7 +6,8 @@ import { ArrowLeft, ArrowRight, CalendarClock, FileCheck2, ShieldCheck } from "l
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getCurrentSession, isAuthEnforced, isGoogleAuthConfigured, sanitizeNextPath } from "@/lib/auth";
+import { isAuthEnforced, isGoogleAuthConfigured, sanitizeNextPath } from "@/lib/auth";
+import { getCurrentSessionFromD1 } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -16,16 +17,19 @@ export const metadata: Metadata = {
 const errors: Record<string, string> = {
   config: "Google sign-in is not configured on this deployment yet.",
   state: "That sign-in attempt expired or could not be verified. Please try again.",
-  oauth: "Google sign-in was cancelled or rejected before completion. Please try again.",
-  token: "Google accepted the account, but the authorization-code exchange failed. Check that GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET come from the same Web application OAuth client and that the callback URL matches exactly.",
-  profile: "Google signed you in, but TermBeacon could not read the verified profile required to create your account.",
-  session: "Google sign-in succeeded, but TermBeacon could not create your workspace session. This points to the D1 auth/session layer rather than your Google credentials.",
+  oauth: "Google sign-in could not be completed. Please try again.",
+  token: "Google rejected the authorization-code exchange. Check that the OAuth client secret and callback URI belong to the same Web application client.",
+  profile: "Google authorized the account, but the verified profile could not be read.",
+  database: "TermBeacon could not reach its D1 database binding while creating your session.",
+  user: "Google sign-in succeeded, but TermBeacon could not persist the user identity in D1.",
+  workspace: "Google sign-in succeeded, but TermBeacon could not create or link the workspace in D1.",
+  session: "Google sign-in succeeded, but TermBeacon could not persist and verify the login session in D1.",
 };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const params = await searchParams;
   const nextPath = sanitizeNextPath(params.next);
-  const session = await getCurrentSession();
+  const session = await getCurrentSessionFromD1();
   if (session) redirect(nextPath);
 
   const configured = isGoogleAuthConfigured();
@@ -61,7 +65,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
             <h2 className="mt-7 text-2xl font-semibold tracking-[-0.035em]">Sign in to your workspace</h2>
             <p className="mt-2 text-sm leading-6 text-[#69746f]">No TermBeacon password to remember. Google is used only to verify your identity.</p>
 
-            {errorMessage ? <div role="alert" className="mt-5 rounded-lg border border-[#e6c6c0] bg-[#fff8f6] p-3 text-sm leading-6 text-[#973d2d]">{errorMessage}</div> : null}
+            {errorMessage ? <div role="alert" className="mt-5 rounded-lg border border-[#e6c6c0] bg-[#fff8f6] p-3 text-sm text-[#973d2d]">{errorMessage}</div> : null}
 
             {configured ? (
               <Button asChild size="lg" className="mt-6 w-full">
