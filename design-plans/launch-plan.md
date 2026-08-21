@@ -43,40 +43,38 @@ The product is intentionally narrower than a CLM or procurement suite. AI may su
 
 ## Landing Page Design State
 
-The homepage follows the owner-approved `DESIGN.md` and the mandatory GPT taste-skill process defined in `AGENTS.md`.
+The homepage follows the owner-approved Aura/Neuform `DESIGN.md` and the mandatory GPT taste-skill process defined in `AGENTS.md`.
 
 Current landing architecture:
 
-1. Premium bounded navigation with Product, How It Works, Security, Pricing, Sign in, and Start Free.
-2. **Cinematic centered hero** with a 2–3 line outcome headline, exactly two acquisition CTAs, and live Escape Window/source proof integrated into the same composition.
-3. Three product-principle proof cells: source-backed, human-confirmed, deadline-first.
-4. Gapless 12-column teaching grid explaining why renewal date ≠ decision deadline (`7 + 5`, then `4 + 4 + 4`).
-5. Horizontal Upload → Verify → Protect workflow interaction.
-6. Pinned/stacked product proof showing Decision Inbox → Escape Window → source verification.
-7. Source-evidence rail using real demo agreement language rather than fabricated testimonials.
-8. Conservative security/privacy section without unsupported certifications.
-9. Single launch pricing plan.
-10. High-contrast final outcome CTA and compact footer.
+1. Premium rounded navigation on the `#FAF9F9` background with black/orange CTA hierarchy.
+2. **Editorial split hero**: large Inter outcome copy on the left; dark `#191C21` animated focal panel on the right with a canvas orbital effect and a code-built Escape Window.
+3. Black mono workflow marquee carrying TermBeacon process language rather than fake partner logos.
+4. Gapless 12-column teaching composition explaining renewal date vs cancel-by (`7 + 5`, then `4 + 4 + 4`).
+5. Dark horizontal Upload → Verify → Act accordions with hover/focus expansion.
+6. Pinned product-proof chapter with GSAP scale/fade across Decision Inbox → source evidence → orange Escape Window decision card.
+7. Dark traceability/security section, one focused pricing plan, oversized dark/orange final CTA, and compact footer.
 
-### Landing visual rules
+### Canonical landing visual rules
 
-- Warm canvas, white product surfaces, ink/forest hierarchy, acid only for high-intent actions and small active accents.
-- Use the Inter-based stack defined in `DESIGN.md`.
-- Use real code-built product UI as primary visual proof.
-- No gradients, glassmorphism, glow, stock photography, decorative AI stars, fake logos, ratings, testimonials, certifications, or savings claims.
-- No cheap meta labels such as `SECTION 01` or `QUESTION 05`.
-- Marketing hero headings stay wide and within 2–3 lines.
-- Bento/grid geometry must have no accidental empty cells.
-- Avoid horizontal page overflow; intentional horizontal source rails may scroll within their own container.
-- `Start Free` remains limited to persistent navigation and pricing. Acquisition uses “Find My Cancel-By Dates” and “See the Escape Window.”
+- Primary orange `#F97316`; accent orange `#FB923C`.
+- Background `#FAF9F9`; dark surface `#191C21`; secondary black `#000000`.
+- Text `#111827` / `#4B5563`; dark border language `#2A2524`.
+- Inter for display moments, Geist for body copy, JetBrains Mono/equivalent for labels and technical metadata.
+- Card radius 16px; control radius 8px; pills only where the source composition supports them.
+- Preserve the source-inspired first viewport signal, dark focal object, visual density, max-width behavior and responsive stacking.
+- Do not flatten the page into a generic SaaS card grid.
+- Canvas/particles/radial atmospheric effects are supporting layers only and must remain performant.
+- Do not invent customer logos, customer counts, testimonials, security certifications, ratings, savings claims, or legal outcomes.
+- `Start Free` stays in persistent navigation/pricing. Acquisition uses “Find My Cancel-By Dates” and “See the Escape Window.”
 
 ### Motion
 
-- Real GSAP + ScrollTrigger is used only for landing-page scroll choreography.
-- Motion is constrained by `DESIGN.md`: transform and opacity only, restrained corporate behavior, and no autoplay distraction.
-- Card stacking and desktop scroll pinning are progressive enhancement; content remains fully readable without JavaScript.
-- `prefers-reduced-motion` removes nonessential GSAP/CSS movement.
-- Hover feedback stays short and product-like.
+- GSAP + ScrollTrigger drives landing-page reveal, desktop pinning and scale/fade choreography.
+- The hero canvas provides restrained ambient orbital movement.
+- CSS drives the continuous process marquee and horizontal accordion expansion.
+- `prefers-reduced-motion` disables nonessential GSAP, canvas looping, marquee animation and hover transforms.
+- Content remains readable and usable if external GSAP scripts fail to load.
 
 ## Product Shell
 
@@ -125,25 +123,7 @@ Rules:
 - Every form control needs a label; icon-only controls need accessible names.
 - Use focus-visible rings on interactive controls.
 - Mobile navigation remains a keyboard-accessible Radix Sheet.
-- Product dialogs/menus use existing Radix-backed primitives.
 - Browser checks should include keyboard navigation and reduced-motion behavior.
-
-## Analytics Event Contract
-
-| Event | Trigger | Properties |
-| --- | --- | --- |
-| `hero_primary_clicked` | Hero “Find My Cancel-By Dates” | `source=hero` |
-| `escape_window_clicked` | “See the Escape Window” | `source` |
-| `contract_opened` | Contract row/detail navigation | `contract_id`, `vendor` |
-| `decision_action_clicked` | Renew / Renegotiate / Cancel | `contract_id`, `action` |
-| `upload_started` | Real PDF processing begins | `source` |
-| `upload_review_viewed` | Suggested terms shown | `contract_id`, `confidence` |
-| `upload_retry_clicked` | Failed extraction retried | `contract_id` |
-| `extracted_terms_confirmed` | Human confirmation | `contract_id` |
-| `pricing_cta_clicked` | Pricing “Start Free” | `plan=team` |
-| `nav_cta_clicked` | Persistent “Start Free” | `viewport` |
-
-The event contract remains provider-neutral until an analytics provider is intentionally selected.
 
 ## Production Validation
 
@@ -156,11 +136,12 @@ The predeploy gate covers TypeScript, extraction tests, production Next.js build
 
 For meaningful landing UI changes also check:
 
-- 320, 375, 768, 1024, and 1440 CSS-pixel widths.
+- 320, 375, 768, 1024, and 1440 CSS-pixel widths when browser tooling is available.
 - Keyboard-only navigation and focus-visible behavior.
 - Browser `prefers-reduced-motion` behavior.
 - No horizontal page overflow.
-- Live Worker homepage shows the intended hero/product proof after deploy.
+- Canvas remains secondary and capped for performance.
+- Live Worker homepage visibly shows the orange/black Aura direction after deploy.
 
 ## Near-Term Roadmap
 
