@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 const errors: Record<string, string> = {
   config: "Google sign-in is not configured on this deployment yet.",
   state: "That sign-in attempt expired or could not be verified. Please try again.",
-  oauth: "Google sign-in could not be completed. Please try again.",
+  oauth: "Google sign-in was cancelled or rejected before completion. Please try again.",
+  token: "Google accepted the account, but the authorization-code exchange failed. Check that GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET come from the same Web application OAuth client and that the callback URL matches exactly.",
+  profile: "Google signed you in, but TermBeacon could not read the verified profile required to create your account.",
+  session: "Google sign-in succeeded, but TermBeacon could not create your workspace session. This points to the D1 auth/session layer rather than your Google credentials.",
 };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
@@ -58,7 +61,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
             <h2 className="mt-7 text-2xl font-semibold tracking-[-0.035em]">Sign in to your workspace</h2>
             <p className="mt-2 text-sm leading-6 text-[#69746f]">No TermBeacon password to remember. Google is used only to verify your identity.</p>
 
-            {errorMessage ? <div role="alert" className="mt-5 rounded-lg border border-[#e6c6c0] bg-[#fff8f6] p-3 text-sm text-[#973d2d]">{errorMessage}</div> : null}
+            {errorMessage ? <div role="alert" className="mt-5 rounded-lg border border-[#e6c6c0] bg-[#fff8f6] p-3 text-sm leading-6 text-[#973d2d]">{errorMessage}</div> : null}
 
             {configured ? (
               <Button asChild size="lg" className="mt-6 w-full">
