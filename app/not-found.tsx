@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+export default function NotFound() { return <main id="main-content" className="grid min-h-[70vh] place-items-center px-4"><div className="max-w-md text-center"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#557169]">404</p><h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em]">Contract not found</h1><p className="mt-3 text-sm leading-6 text-[#68736d]">This demo contract does not exist. Return to the Decision Inbox to open one of the sample agreements.</p><Button asChild className="mt-5"><Link href="/app">Back to Decision Inbox</Link></Button></div></main>; }

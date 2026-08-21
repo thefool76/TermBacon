@@ -1,23 +1,67 @@
-import { ArrowRight, BellRing, CalendarDays, Check, ChevronRight, FileSearch, ShieldCheck, Sparkles } from "lucide-react";
+import type { Metadata } from "next";
+import { FinalCta } from "@/components/marketing/final-cta";
+import { Hero } from "@/components/marketing/hero";
+import { HowItWorks } from "@/components/marketing/how-it-works";
+import { PricingSection } from "@/components/marketing/pricing-section";
+import { ProblemSection } from "@/components/marketing/problem-section";
+import { ProductProof } from "@/components/marketing/product-proof";
+import { RiskSection } from "@/components/marketing/risk-section";
+import { SecuritySection } from "@/components/marketing/security-section";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteHeader } from "@/components/marketing/site-header";
+import { SourceVerificationSection } from "@/components/marketing/source-verification-section";
+import { TrustStrip } from "@/components/marketing/trust-strip";
+import { siteConfig } from "@/lib/site";
 
-const decisions = [
-  { vendor: "HubSpot", deadline: "6 days", exposure: "$12,000", owner: "Sarah", tone: "critical" },
-  { vendor: "Datadog", deadline: "19 days", exposure: "$8,400", owner: "Mike", tone: "warning" },
-  { vendor: "Salesforce", deadline: "27 days", exposure: "$36,000", owner: "You", tone: "warning" },
-  { vendor: "Adobe", deadline: "71 days", exposure: "$4,200", owner: "James", tone: "calm" },
-];
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "TermBeacon",
+    url: "/",
+    title: "Stop contracts from renewing before you decide.",
+    description: siteConfig.description,
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "TermBeacon Escape Window showing a cancel-by date before renewal" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Stop contracts from renewing before you decide.",
+    description: siteConfig.description,
+    images: ["/opengraph-image"],
+  },
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Organization", name: "TermBeacon", url: siteConfig.url },
+    {
+      "@type": "SoftwareApplication",
+      name: "TermBeacon",
+      url: siteConfig.url,
+      description: siteConfig.description,
+    },
+  ],
+};
 
 export default function Home() {
-  return <main className="min-h-screen bg-[#f7f8f7] text-slate-950">
-    <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6"><a className="flex items-center gap-2 text-lg font-semibold tracking-tight" href="#top"><span className="grid size-7 place-items-center rounded-lg bg-[#0b3b34] text-sm text-white">T</span>TermBeacon</a><div className="hidden items-center gap-7 text-sm text-slate-600 md:flex"><a href="#how-it-works">How it works</a><a href="#security">Security</a><a href="#pricing">Pricing</a></div><a href="#pricing" className="rounded-lg bg-[#0b3b34] px-4 py-2 text-sm font-medium text-white hover:bg-[#13564b]">Start free</a></nav>
-    <section id="top" className="mx-auto max-w-6xl px-6 pb-20 pt-16 text-center sm:pt-24"><div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[#cbd9d2] bg-white px-3 py-1.5 text-xs font-medium text-[#0b3b34]"><Sparkles size={14}/>Built for vendor agreements</div><h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-[-0.055em] text-[#10221e] sm:text-7xl">See the deadline<br className="hidden sm:block"/> before the renewal.</h1><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">TermBeacon finds the renewal date, notice period, and price terms in your vendor agreements—then shows your team the last day it can act.</p><div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><a href="#pricing" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#e9ff70] px-5 py-3 font-medium text-[#10221e] shadow-sm hover:bg-[#dcf75d]">Start tracking contracts <ArrowRight size={17}/></a><a href="#how-it-works" className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700">See how it works</a></div><p className="mt-4 text-xs text-slate-500">No credit card required · Set up in minutes</p></section>
-    <section className="mx-auto max-w-6xl px-6 pb-24"><div className="overflow-hidden rounded-2xl border border-[#d6dfda] bg-white shadow-[0_20px_70px_rgba(16,34,30,0.11)]"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div className="flex items-center gap-3"><span className="size-2.5 rounded-full bg-[#e0583e]"/><span className="text-sm font-medium">Decision inbox</span></div><span className="rounded-full bg-[#fff0ed] px-2.5 py-1 text-xs font-medium text-[#bd3d26]">3 need attention</span></div><div className="grid gap-4 border-b border-slate-100 bg-[#fbfcfb] p-5 sm:grid-cols-3"><Metric label="Renewal exposure · next 90 days" value="$60,400"/><Metric label="Decisions needed" value="3"/><Metric label="Deadline under 7 days" value="1" danger/></div><div className="p-3 sm:p-5"><div className="mb-3 grid grid-cols-[1.5fr_.8fr_.8fr_.7fr_auto] gap-2 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400"><span>Vendor</span><span>Act by</span><span>Exposure</span><span>Owner</span><span/></div>{decisions.map((item) => <div key={item.vendor} className="mb-1 grid grid-cols-[1.5fr_.8fr_.8fr_.7fr_auto] items-center gap-2 rounded-xl px-3 py-3 text-sm hover:bg-[#f6f8f7]"><div className="font-medium">{item.vendor}</div><div className={item.tone === "critical" ? "font-semibold text-[#bd3d26]" : item.tone === "warning" ? "font-semibold text-[#a96300]" : "text-slate-600"}>{item.deadline}</div><div>{item.exposure}</div><div className="text-slate-600">{item.owner}</div><ChevronRight size={16} className="text-slate-400"/></div>)}</div></div></section>
-    <section id="how-it-works" className="border-y border-[#dce5e0] bg-[#eef4f0] py-24"><div className="mx-auto max-w-6xl px-6"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#347668]">The escape window</p><div className="mt-4 grid items-end gap-12 lg:grid-cols-2"><div><h2 className="text-4xl font-semibold tracking-[-0.04em] text-[#10221e]">The date that matters is not the renewal date.</h2><p className="mt-5 max-w-lg leading-7 text-slate-600">Your agreement may renew in November, but the last day to prevent it could be September. TermBeacon puts that cancel-by date front and centre.</p></div><div className="rounded-2xl bg-white p-6 shadow-sm"><div className="flex justify-between text-xs font-medium text-slate-500"><span>TODAY<br/><b className="text-slate-900">Aug 20</b></span><span className="text-right">CANCEL-BY<br/><b className="text-[#bd3d26]">Sep 2</b></span><span className="text-right">RENEWAL<br/><b className="text-slate-900">Nov 1</b></span></div><div className="mt-4 h-2 rounded-full bg-slate-100"><div className="h-2 w-[52%] rounded-full bg-[#e0583e]"/></div><div className="mt-5 flex items-center gap-2 text-sm font-medium text-[#bd3d26]"><BellRing size={17}/>Escape window closing · 13 days left</div><p className="mt-2 text-sm text-slate-600">$24,000 renewal exposure · 60-day notice required</p></div></div></div></section>
-    <section className="mx-auto grid max-w-6xl gap-5 px-6 py-24 md:grid-cols-3"><Feature icon={<FileSearch/>} title="AI suggests. You confirm." text="Extracted terms remain a draft until a person checks the source clause and confirms them."/><Feature icon={<CalendarDays/>} title="Deterministic deadlines" text="Your cancel-by date is calculated from explicit contract terms, not an opaque legal-risk score."/><Feature icon={<ShieldCheck/>} title="Sensitive by design" text="Documents stay private. Only relevant passages are selected for extraction, reducing data exposure."/></section>
-    <section id="security" className="mx-auto max-w-6xl px-6 pb-24"><div className="rounded-2xl bg-[#10221e] px-7 py-12 text-white sm:px-12"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#b9d8c6]">Designed for trust</p><h2 className="mt-3 max-w-xl text-3xl font-semibold tracking-[-0.035em]">A record your finance and procurement teams can rely on.</h2><div className="mt-8 grid gap-6 text-sm text-[#d3e1da] sm:grid-cols-3"><p><b className="block pb-1 text-white">Source-backed</b>Every extracted term points to its original page and clause.</p><p><b className="block pb-1 text-white">Decision history</b>See who decided, what changed, and the outcome next year.</p><p><b className="block pb-1 text-white">No legal advice</b>Operational renewal risk, with explainable rules your team controls.</p></div></div></section>
-    <section id="pricing" className="mx-auto max-w-6xl px-6 pb-24 text-center"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#347668]">Simple pricing</p><h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em]">Start before another renewal slips through.</h2><div className="mx-auto mt-8 max-w-sm rounded-2xl border border-[#d6dfda] bg-white p-7 text-left shadow-sm"><p className="font-medium">Team</p><p className="mt-2 text-4xl font-semibold">$49<span className="text-base font-normal text-slate-500"> / month</span></p><p className="mt-3 text-sm leading-6 text-slate-600">Track every vendor agreement, assign owners, and keep decisions on time.</p><ul className="my-6 space-y-3 text-sm text-slate-700">{["Unlimited contracts", "Team reminders", "Decision history", "Source-linked extraction"].map((item) => <li className="flex gap-2" key={item}><Check size={17} className="text-[#347668]"/>{item}</li>)}</ul><button className="w-full rounded-lg bg-[#0b3b34] py-3 text-sm font-medium text-white hover:bg-[#13564b]">Start free trial</button></div></section>
-    <footer className="border-t border-[#dce5e0] px-6 py-8 text-center text-sm text-slate-500">© 2026 TermBeacon · Know what renews. Know when to act.</footer>
-  </main>;
+  return (
+    <>
+      <SiteHeader />
+      <main id="main-content">
+        <Hero />
+        <TrustStrip />
+        <ProblemSection />
+        <HowItWorks />
+        <ProductProof />
+        <SourceVerificationSection />
+        <RiskSection />
+        <SecuritySection />
+        <PricingSection />
+        <FinalCta />
+      </main>
+      <SiteFooter />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
+    </>
+  );
 }
-function Metric({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) { return <div><p className="text-xs text-slate-500">{label}</p><p className={danger ? "mt-1 text-2xl font-semibold text-[#bd3d26]" : "mt-1 text-2xl font-semibold"}>{value}</p></div>; }
-function Feature({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <article className="rounded-xl border border-[#dce5e0] bg-white p-6"><div className="mb-5 text-[#347668]">{icon}</div><h3 className="font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p></article>; }
