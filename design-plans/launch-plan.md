@@ -2,42 +2,47 @@
 
 ## Product Goal
 
-Ship a focused B2B SaaS marketing site and product shell that makes one operational promise immediately understandable: TermBeacon shows the last day a team can still act before a vendor contract auto-renews.
+Ship a focused B2B SaaS that makes one operational promise immediately understandable: TermBeacon shows the last day a team can still act before a vendor contract auto-renews.
 
-The launch surface is intentionally narrower than a CLM or procurement suite. AI may suggest renewal-relevant terms, but the interface requires human confirmation before those terms become trusted product state.
+The product is intentionally narrower than a CLM or procurement suite. AI may suggest renewal-relevant terms, but the interface requires human confirmation before those terms become trusted product state. Confirmed renewal dates and notice periods drive a deterministic cancel-by date and a clear Renew / Renegotiate / Cancel workflow.
 
 ## Route Map
 
 | Route | Purpose | Indexing |
 | --- | --- | --- |
 | `/` | Marketing narrative, product proof, security, pricing, conversion | Index |
+| `/sign-in` | Google OAuth entry point for durable workspace access | Noindex |
 | `/app` | Decision Inbox | Noindex |
 | `/app/contracts` | Searchable/filterable vendor contract table | Noindex |
 | `/app/contracts/[id]` | Escape Window, source clause, decision actions | Noindex |
-| `/app/upload` | Upload → review → confirm demo workflow | Noindex |
+| `/app/upload` | Real PDF upload → extraction → review → confirmation | Noindex |
 | `/api/health` | Deployment smoke test | Disallow in robots |
 | `/robots.txt` | Crawl policy | Public |
 | `/sitemap.xml` | Public URL discovery | Public |
 | `/manifest.webmanifest` | PWA/site metadata | Public |
 | `/opengraph-image` | Dynamic social preview | Public |
 
-## Phase 1 — Foundation
+## Current Product Foundation
 
-- Preserve Next.js App Router, TypeScript, Tailwind CSS v4, shadcn/ui source ownership, OpenNext Cloudflare configuration, and existing Polar scaffolding.
-- Centralize public site configuration and static demo contract data.
-- Establish semantic color, radius, and motion tokens in `app/globals.css`.
-- Remove `transition-all` from shared primitives.
-- Keep billing secrets and webhook behavior unchanged.
+- Next.js App Router + TypeScript + Tailwind CSS v4.
+- shadcn-style owned UI primitives backed by `radix-ui`.
+- Cloudflare Workers through `@opennextjs/cloudflare`.
+- Cloudflare D1 for application data, auth/session records, and chunked MVP PDF persistence.
+- Workers AI for PDF conversion and renewal-term extraction.
+- Google OAuth + D1-backed users, workspaces, memberships, and hashed sessions.
+- Polar billing scaffolding preserved for later activation.
+- GitHub Actions gates production with type-check, production build, migrations, remote D1 smoke tests, deploy, and OAuth-secret sync.
 
-## Phase 2 — Signature Product UI
+## Signature Product UI
 
-- Build one reusable Escape Window used by marketing and the private product shell.
-- Build one reusable Decision Inbox using 3 metrics only.
-- Build source-clause verification with highlighted source language beside extracted terms.
-- Build human-confirmed decision actions for Renew, Renegotiate, and Cancel.
-- Keep all sample values in `lib/demo-data.ts` so marketing and product proof cannot drift.
+- Reusable Escape Window on marketing and contract detail surfaces.
+- Decision Inbox focused on the few metrics needed to decide what needs attention next.
+- Source-clause verification beside extracted terms.
+- Human-confirmed Renew / Renegotiate / Cancel decisions.
+- Real upload/review flow with durable ingestion states and retryable failures.
+- Shared product language and demo data where marketing proof requires deterministic examples.
 
-## Phase 3 — Marketing Narrative
+## Marketing Narrative
 
 1. Persistent navigation with Product, How It Works, Security, Pricing, Sign in, and Start Free.
 2. Split hero with outcome-led copy and live Decision Inbox + Escape Window proof.
@@ -46,30 +51,52 @@ The launch surface is intentionally narrower than a CLM or procurement suite. AI
 5. Upload → Confirm → Decide workflow.
 6. Product-proof section for Decision Inbox and Escape Window.
 7. Source verification with clause highlight.
-8. Explainable Renewal Risk section.
+8. Explainable renewal risk/deadline section.
 9. Conservative security/privacy section without unsupported certifications.
 10. Single-plan pricing and final outcome CTA.
 
-## Phase 4 — Product Shell
+## Product Shell
 
 - `/app`: prioritize decisions by cancel-by date.
 - `/app/contracts`: URL-backed status filters and search query.
 - `/app/contracts/[id]`: make Escape Window the primary surface, followed by decision actions and source verification.
-- `/app/upload`: provide an interaction-driven static demo that never claims to upload or process a real document.
+- `/app/upload`: accept a real PDF, persist it, extract renewal terms, require review, and only then confirm trusted terms.
 - Use mobile-specific stacked rows instead of squeezing desktop tables.
 
-## Phase 5 — SEO & Metadata
+### Contract ingestion states
+
+The durable ingestion lifecycle is:
+
+`uploaded → processing → needs_review | extraction_failed → confirmed | archived`
+
+Rules:
+
+- Persist the PDF before extraction so a failed extraction remains retryable.
+- Deduplicate by SHA-256 within the workspace.
+- Prefer unknown/null over unsupported AI guesses.
+- Verify source evidence against converted agreement text.
+- Low-confidence or incomplete critical terms require manual review.
+- Human confirmation is the boundary between AI suggestions and trusted contract state.
+
+## Authentication & Workspaces
+
+- Google OAuth is used for identity.
+- D1 stores users, workspaces, workspace memberships, and hashed session tokens.
+- Google access/refresh tokens are not persisted.
+- Once authentication is enforced, contract authorization resolves from the validated D1 session/workspace rather than trusting an anonymous workspace cookie.
+- Existing anonymous browser data can be claimed into the first signed-in workspace when safe.
+
+## SEO & Metadata
 
 - Configure `metadataBase` from `NEXT_PUBLIC_SITE_URL` with a localhost development fallback.
 - Keep one title template and stable description defaults in the root layout.
-- Add homepage canonical, Open Graph URL/title/description, and Twitter metadata.
-- Add dynamic icon and Open Graph image using `ImageResponse`.
-- Add `robots.ts`, `sitemap.ts`, and `manifest.ts`.
-- Keep `/app/*` noindex/nofollow and out of the sitemap.
-- Render only Organization and SoftwareApplication JSON-LD properties that match the public product copy.
+- Keep homepage canonical, Open Graph URL/title/description, and Twitter metadata.
+- Keep icon, dynamic Open Graph image, robots, sitemap, and manifest routes.
+- Keep `/app/*` and `/sign-in` noindex/nofollow and out of the sitemap.
+- Render only Organization and SoftwareApplication JSON-LD properties that match public product copy.
 - Use “TermBeacon” consistently in public metadata even though the repository slug remains `TermBacon`.
 
-## Phase 6 — Accessibility & Motion
+## Accessibility & Motion
 
 - Keep a visible-on-focus skip link and hierarchical headings.
 - Use links for navigation and buttons for actions.
@@ -86,15 +113,16 @@ The launch surface is intentionally narrower than a CLM or procurement suite. AI
 | --- | --- | --- |
 | `hero_primary_clicked` | Hero “Find My Cancel-By Dates” | `source=hero` |
 | `escape_window_clicked` | “See the Escape Window” | `source` |
-| `demo_contract_opened` | Contract row/detail navigation | `contract_id`, `vendor` |
+| `contract_opened` | Contract row/detail navigation | `contract_id`, `vendor` |
 | `decision_action_clicked` | Renew / Renegotiate / Cancel | `contract_id`, `action` |
-| `upload_started` | Upload review action | `source` |
-| `upload_review_viewed` | Suggested terms shown | `contract_id` |
+| `upload_started` | Real PDF processing begins | `source` |
+| `upload_review_viewed` | Suggested terms shown | `contract_id`, `confidence` |
+| `upload_retry_clicked` | Failed extraction retried | `contract_id` |
 | `extracted_terms_confirmed` | Human confirmation | `contract_id` |
 | `pricing_cta_clicked` | Pricing “Start Free” | `plan=team` |
 | `nav_cta_clicked` | Persistent “Start Free” | `viewport` |
 
-The event contract is provider-neutral. Add an analytics SDK only after choosing a provider.
+The event contract remains provider-neutral until an analytics provider is intentionally selected.
 
 ## Launch Checklist
 
@@ -108,14 +136,18 @@ The event contract is provider-neutral. Add an analytics SDK only after choosing
 - [x] No generic contract chatbot or legal-risk score exists.
 - [x] No fake social proof or security certification is rendered.
 
-### Interface
+### Core Product
 
 - [x] Signature Escape Window exists on marketing and product detail surfaces.
-- [x] Decision Inbox uses 3 metrics.
+- [x] Decision Inbox uses a focused operational hierarchy.
 - [x] Source clause sits beside extracted terms.
-- [x] Mobile uses stacked decision/contract rows.
-- [x] Destructive Cancel action requires a confirmation dialog.
-- [x] Upload demo clearly states that it does not upload the selected file.
+- [x] Real PDF ingestion is live.
+- [x] Failed extraction remains retryable from the stored PDF.
+- [x] Duplicate PDF uploads are detected by workspace-scoped SHA-256.
+- [x] Low-confidence/incomplete terms require review.
+- [x] Confirmation produces a deterministic cancel-by date.
+- [x] Decisions persist in D1.
+- [x] Google OAuth and durable workspaces are live.
 
 ### Accessibility
 
@@ -124,7 +156,7 @@ The event contract is provider-neutral. Add an analytics SDK only after choosing
 - [x] Mobile navigation uses a keyboard-accessible Sheet.
 - [x] Dialogs are keyboard/focus managed by the shared primitive.
 - [x] Form inputs are labeled.
-- [x] Async demo processing and decision confirmation use polite live regions.
+- [x] Async upload/review states use accessible status/error messaging.
 - [x] Reduced-motion behavior is defined.
 
 ### SEO
@@ -139,39 +171,46 @@ The event contract is provider-neutral. Add an analytics SDK only after choosing
 - [x] Private product shell is noindex/nofollow.
 - [x] Structured data avoids ratings, reviews, customer counts, certifications, and other unsupported claims.
 
-### Validation Before Production
+### Production Validation
 
-> **Current handoff status (Aug 21, 2026):** source-level syntax/import/accessibility/SEO audits pass in the working copy. The exact `typecheck`, `build`, `preview`, and Wrangler commands cannot complete in this sandbox because repository dependencies are not installed and package-registry access is unavailable. Keep the repository’s existing `package-lock.json`, run `npm ci` in the real checkout, then complete the unchecked browser/OpenNext/deployment gates below.
+Current GitHub Actions deployment should not be treated as successful until both status contexts are green:
 
-- [ ] Install dependencies with the repository lockfile in a network-enabled environment.
-- [ ] Run `npm run typecheck`.
-- [ ] Run `npm run build`.
-- [ ] Run `npm run preview` and verify OpenNext/Cloudflare runtime behavior.
-- [ ] Test `/api/health` through the preview server.
-- [ ] Verify `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/icon`, and `/opengraph-image` through HTTP.
-- [ ] Test 320, 375, 768, 1024, and 1440 CSS-pixel widths in a real browser.
-- [ ] Complete keyboard-only pass for navigation, dialogs, dropdowns, and upload flow.
-- [ ] Complete browser `prefers-reduced-motion` pass.
-- [ ] Set production `NEXT_PUBLIC_SITE_URL`.
-- [ ] Verify Cloudflare credentials/account before `npm run deploy`.
-- [ ] Smoke-test the deployed URL and `/api/health`.
+- `termbeacon/predeploy-ok`
+- `termbeacon/deploy-ok`
 
-## Future SaaS Roadmap
+The predeploy gate covers TypeScript, extraction tests, production Next.js build, D1 migrations, and remote D1 auth smoke validation. The deploy gate covers the Cloudflare Worker deployment and OAuth secret synchronization.
 
-### After Launch Validation
+Browser-level checks remain necessary for user-facing changes:
 
-- Real PDF ingestion and storage with explicit retention/deletion policy.
-- Renewal-term extraction pipeline that returns source spans and a review state.
-- Auth, workspace membership, and owner assignment.
-- Persisted decision history and reminders.
-- Email/calendar notifications around confirmed cancel-by dates.
+- [ ] Test 320, 375, 768, 1024, and 1440 CSS-pixel widths after meaningful UI changes.
+- [ ] Complete keyboard-only pass for navigation, dialogs, dropdowns, and upload/review flow.
+- [ ] Complete browser `prefers-reduced-motion` pass after motion changes.
+- [ ] Smoke-test `/api/health`, authentication, a real PDF upload, extraction review, confirmation, decision persistence, sign-out, and sign-in after core-flow changes.
+
+## Near-Term Roadmap
+
+### Next: proactive renewal alerts
+
+- Email reminders based on **cancel-by date**, not renewal date.
+- Initial cadence candidates: 90 / 60 / 30 / 14 / 7 days before cancel-by.
+- Alerts should contain vendor, exposure, cancel-by date, renewal date, notice requirement, and a direct Review Contract action.
+- Keep v1 email-only; do not add Slack/Teams/SMS until customer evidence justifies them.
+
+### Then
+
+- Team member invitations and durable owner assignment.
+- Decision history / audit trail.
+- Retention/deletion controls for stored PDFs.
+- Billing/pricing activation.
+- Onboarding and empty-state refinement.
+- Extraction evaluation corpus with representative vendor agreements and measured field-level accuracy.
 
 ### After Product-Market Evidence
 
 - Bulk import and vendor normalization.
 - Approval workflows for higher-exposure renewals.
 - Renewal calendar and exported decision history.
-- Role-based permissions and audit logging.
+- Role-based permissions and richer audit logging.
 - Procurement/finance integrations justified by actual customer workflows.
 
 ### Explicitly Not On The Near-Term Roadmap
