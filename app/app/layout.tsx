@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/product/app-shell";
-import { getCurrentSession, isAuthEnforced } from "@/lib/auth";
+import { isAuthEnforced } from "@/lib/auth";
+import { getCurrentSessionFromD1 } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
   title: "Workspace",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default async function ProductLayout({ children }: { children: ReactNode }) {
   const authRequired = await isAuthEnforced();
-  const session = await getCurrentSession();
+  const session = await getCurrentSessionFromD1();
 
   if (authRequired && !session) redirect("/sign-in?next=/app");
 

@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   ANON_WORKSPACE_COOKIE,
   AUTH_SESSION_COOKIE,
-  createSessionForGoogleProfile,
   exchangeGoogleCode,
   OAUTH_NEXT_COOKIE,
   OAUTH_STATE_COOKIE,
@@ -11,8 +10,13 @@ import {
   sanitizeNextPath,
   sessionCookieOptions,
 } from "@/lib/auth";
+import {
+  provisionGoogleSession,
+  SessionProvisionError,
+  type SessionProvisionStage,
+} from "@/lib/auth-session";
 
-type OAuthFailureReason = "oauth" | "state" | "token" | "profile" | "session";
+type OAuthFailureReason = "oauth" | "state" | "token" | "profile" | SessionProvisionStage;
 
 export async function GET(request: NextRequest) {
   const store = await cookies();
@@ -23,12 +27,27 @@ export async function GET(request: NextRequest) {
   const nextPath = sanitizeNextPath(store.get(OAUTH_NEXT_COOKIE)?.value);
 
   if (request.nextUrl.searchParams.get("error")) return oauthFailure(request, "oauth");
-  if (!state || !expectedState || state !== expectedState || !code || !verifier) return oauthFailure(request, "state");
+  if (!state || !expectedState || state !== expectedState || !code || !verifier) {
+    return oauthFailure(request, "state");
+  }
+
+  let profile: Awaited<ReturnType<typeof exchangeGoogleCode>>;
+  try {
+    profile = await exchangeGoogleCode({ code, verifier, origin: request.nextUrl.origin });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown Google OAuth error";
+    const reason: OAuthFailureReason = /token exchange/i.test(message)
+      ? "token"
+      : /profile request|email is not verified/i.test(message)
+        ? "profile"
+        : "oauth";
+    console.error(JSON.stringify({ event: "google_oauth_exchange_failed", reason, message }));
+    return oauthFailure(request, reason);
+  }
 
   try {
-    const profile = await exchangeGoogleCode({ code, verifier, origin: request.nextUrl.origin });
     const anonymousWorkspaceId = store.get(ANON_WORKSPACE_COOKIE)?.value ?? null;
-    const { token, session } = await createSessionForGoogleProfile(profile, anonymousWorkspaceId);
+    const { token, session } = await provisionGoogleSession(profile, anonymousWorkspaceId);
     const response = NextResponse.redirect(new URL(nextPath, request.nextUrl.origin), 302);
     response.headers.set("Cache-Control", "no-store");
     response.cookies.set(AUTH_SESSION_COOKIE, token, sessionCookieOptions());
@@ -36,17 +55,11 @@ export async function GET(request: NextRequest) {
     clearOAuthCookies(response);
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown OAuth error";
-    const reason = classifyOAuthFailure(message);
-    console.error(JSON.stringify({ event: "google_oauth_callback_failed", reason, message }));
+    const reason: OAuthFailureReason = error instanceof SessionProvisionError ? error.stage : "session";
+    const message = error instanceof Error ? error.message : "Unknown session provisioning error";
+    console.error(JSON.stringify({ event: "google_session_provision_failed", reason, message }));
     return oauthFailure(request, reason);
   }
-}
-
-function classifyOAuthFailure(message: string): OAuthFailureReason {
-  if (/token exchange/i.test(message)) return "token";
-  if (/profile request|email is not verified|email.*verified/i.test(message)) return "profile";
-  return "session";
 }
 
 function oauthFailure(request: NextRequest, reason: OAuthFailureReason) {
