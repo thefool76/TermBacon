@@ -45,6 +45,7 @@ export function AuraOrbit() {
     };
 
     const render = (time = 0) => {
+      frame = 0;
       context.clearRect(0, 0, width, height);
 
       const cx = width * 0.54;
@@ -95,26 +96,24 @@ export function AuraOrbit() {
       }
     };
 
-    resize();
-    render();
-
-    const observer = new ResizeObserver(() => {
-      resize();
-      render();
-    });
-    observer.observe(canvas);
-
-    const onMotionChange = () => {
+    const restart = () => {
       if (frame) window.cancelAnimationFrame(frame);
       frame = 0;
+      resize();
       render();
     };
-    reducedMotion.addEventListener("change", onMotionChange);
+
+    restart();
+
+    const observer = new ResizeObserver(restart);
+    observer.observe(canvas);
+
+    reducedMotion.addEventListener("change", restart);
 
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       observer.disconnect();
-      reducedMotion.removeEventListener("change", onMotionChange);
+      reducedMotion.removeEventListener("change", restart);
     };
   }, []);
 
