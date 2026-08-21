@@ -1,261 +1,235 @@
 import Link from "next/link";
 import {
-  ArrowDownRight,
   ArrowRight,
+  CalendarDays,
   Check,
-  CheckCircle2,
-  CircleDollarSign,
   Clock3,
   FileCheck2,
   FileText,
   ShieldCheck,
   UserRoundCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DecisionInbox } from "@/components/product/decision-inbox";
-import { EscapeWindow } from "@/components/product/escape-window";
-import { SourceClause } from "@/components/product/source-clause";
-import { contracts, currency, formatShortDate, getDaysRemaining } from "@/lib/demo-data";
+import { AuraOrbit } from "@/components/marketing/aura-orbit";
 import { LandingMotion } from "@/components/marketing/landing-motion";
+import { contracts, currency, formatShortDate, getDaysRemaining } from "@/lib/demo-data";
 
-const leadContract = contracts[0];
+const contract = contracts[0];
 
 const workflow = [
   {
-    title: "Upload the agreement",
-    copy: "Add the vendor PDF you need to track. TermBeacon stores it first so a failed extraction can be retried without another upload.",
-    proof: "vendor-agreement.pdf",
-    detail: "PDF persisted before extraction",
     icon: FileText,
+    title: "Upload",
+    copy: "Drop in the vendor agreement. The original PDF is stored before extraction so failed runs remain retryable.",
+    meta: "PDF → persisted",
   },
-  {
-    title: "Verify the renewal terms",
-    copy: "AI suggests the renewal date, notice period and auto-renewal language. The source clause stays beside the suggestion until a person confirms it.",
-    proof: "Nov 1 · 60-day notice",
-    detail: "Source-backed human review",
-    icon: FileCheck2,
-  },
-  {
-    title: "Protect the cancel-by date",
-    copy: "TermBeacon deterministically subtracts the confirmed notice period from the renewal date, assigns ownership and keeps the decision visible.",
-    proof: "Sep 2 · last day to act",
-    detail: "Renew · Renegotiate · Cancel",
-    icon: Clock3,
-  },
-];
-
-const principles = [
   {
     icon: FileCheck2,
-    title: "Source-backed",
-    text: "Every trusted renewal term keeps its supporting agreement language nearby.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Human-confirmed",
-    text: "AI output stays suggested until a person reviews and confirms the terms.",
+    title: "Verify",
+    copy: "TermBeacon suggests the renewal date, notice period and auto-renewal language with the supporting clause beside it.",
+    meta: "AI → human confirmation",
   },
   {
     icon: Clock3,
-    title: "Deadline-first",
-    text: "The operating focus is the last actionable cancel-by date, not a generic contract dashboard.",
+    title: "Act",
+    copy: "The confirmed notice period is subtracted from renewal to produce the one date your team must protect.",
+    meta: "cancel-by → decision",
   },
 ];
 
-const pricingFeatures = [
-  "Real PDF contract tracking",
-  "Renewal-term extraction and review",
-  "Source-backed Escape Windows",
-  "Owner assignment and decisions",
-  "Retryable extraction failures",
+const inboxRows = [
+  ["HubSpot", "12 days", "$24,000"],
+  ["Datadog", "19 days", "$8,400"],
+  ["Salesforce", "27 days", "$36,000"],
 ];
 
 export function LandingPage() {
-  const daysRemaining = getDaysRemaining(leadContract.cancelByDate);
+  const daysRemaining = getDaysRemaining(contract.cancelByDate);
 
   return (
-    <main id="main-content" className="w-full max-w-full overflow-x-hidden" data-release={process.env.NEXT_PUBLIC_RELEASE_SHA ?? "development"}>
+    <main
+      id="main-content"
+      className="aura-landing w-full max-w-full overflow-x-hidden bg-[#FAF9F9] text-[#111827]"
+      data-release={process.env.NEXT_PUBLIC_RELEASE_SHA ?? "development"}
+    >
       <LandingMotion />
 
-      <section id="product" className="relative border-b border-line px-4 pb-24 pt-16 sm:px-6 sm:pb-32 sm:pt-24 lg:px-8 lg:pb-40 lg:pt-28">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-6xl text-center">
-            <p className="js-reveal text-sm font-semibold text-forest">Your renewal date is not your decision deadline.</p>
-            <h1 className="js-reveal mx-auto mt-5 max-w-6xl text-balance text-[clamp(3.2rem,7.1vw,7.4rem)] font-semibold leading-[.88] tracking-[-0.078em] text-ink">
-              Stop contracts from renewing before you decide.
+      <section id="product" className="relative overflow-hidden border-b border-black/10">
+        <div className="mx-auto grid min-h-[calc(100svh-88px)] max-w-[1440px] items-stretch lg:grid-cols-12">
+          <div className="relative flex flex-col justify-center px-5 py-16 sm:px-8 sm:py-20 lg:col-span-7 lg:px-12 xl:px-16">
+            <div className="aura-reveal aura-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F97316]">
+              Vendor renewal control / 2026
+            </div>
+
+            <h1 className="aura-reveal aura-display mt-7 max-w-5xl text-[clamp(3.25rem,6.2vw,6.8rem)] font-medium leading-[.92] tracking-[-0.055em] text-black">
+              Stop contracts
+              <span className="mx-2 inline-flex size-[.62em] translate-y-[.05em] items-center justify-center rounded-full bg-[#F97316] align-baseline sm:mx-3">
+                <span className="size-[.26em] rounded-full border border-black/80" aria-hidden="true" />
+              </span>
+              from renewing before you decide.
             </h1>
-            <p className="js-reveal mx-auto mt-7 max-w-2xl text-pretty text-base leading-7 text-muted-ink sm:text-lg sm:leading-8">
-              Upload vendor agreements. TermBeacon finds the renewal terms, keeps the source beside them, and shows the last day your team can still act.
+
+            <p className="aura-reveal mt-7 max-w-2xl text-base leading-7 text-[#4B5563] sm:text-lg sm:leading-8">
+              Upload the agreement. TermBeacon finds the renewal terms, keeps the source visible, and shows the last day your team can still act.
             </p>
-            <div className="js-reveal mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild variant="acid" size="lg">
-                <Link href="/app/upload">Find My Cancel-By Dates <ArrowRight aria-hidden="true" size={17} /></Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <a className="group" href="#escape-window">
-                  See the Escape Window
-                  <ArrowDownRight aria-hidden="true" className="transition-transform duration-150 ease-[cubic-bezier(.22,1,.36,1)] group-hover:translate-x-0.5 group-hover:translate-y-0.5 motion-reduce:transition-none" size={17} />
-                </a>
-              </Button>
+
+            <div className="aura-reveal mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/app/upload"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#F97316] px-6 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_rgba(249,115,22,.22)] transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(249,115,22,.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 motion-reduce:transition-none"
+              >
+                Find My Cancel-By Dates
+                <ArrowRight aria-hidden="true" size={16} className="transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none" />
+              </Link>
+              <a
+                href="#escape-window"
+                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-black/20 bg-white px-6 py-3 text-sm font-semibold text-black transition-[transform,border-color,background-color] duration-300 ease-out hover:-translate-y-1 hover:border-black hover:bg-[#FFF7ED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316] motion-reduce:transition-none"
+              >
+                See the Escape Window
+                <ArrowRight aria-hidden="true" size={16} className="transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none" />
+              </a>
+            </div>
+
+            <div className="aura-reveal mt-10 flex max-w-2xl items-center gap-3 border-t border-black/10 pt-5 text-sm text-[#4B5563]">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-black text-white">
+                <Check aria-hidden="true" size={14} />
+              </span>
+              <p>AI suggests. Your team confirms. The cancel-by date is calculated from confirmed terms.</p>
             </div>
           </div>
 
-          <div className="js-reveal relative mx-auto mt-16 max-w-6xl lg:mt-20">
-            <div className="mx-auto max-w-5xl border-l-2 border-acid pl-3 sm:pl-4">
-              <EscapeWindow contract={leadContract} compact />
-            </div>
-            <div className="relative z-10 -mt-3 ml-auto max-w-xl border border-line bg-white p-4 shadow-[0_14px_40px_rgba(18,33,29,.07)] sm:-mt-6 sm:mr-8 sm:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">
-                <span className="text-muted-ink">Agreement evidence</span>
-                <span className="text-positive">Human confirmed</span>
+          <div className="relative min-h-[620px] overflow-hidden bg-[#191C21] lg:col-span-5 lg:min-h-full">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_20%,rgba(249,115,22,.32),transparent_32%),radial-gradient(circle_at_20%_80%,rgba(251,146,60,.16),transparent_30%)]" />
+            <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
+            <AuraOrbit />
+
+            <div className="relative z-10 flex h-full min-h-[620px] flex-col justify-between p-5 sm:p-8 lg:p-7 xl:p-9">
+              <div className="aura-reveal flex items-center justify-between">
+                <span className="aura-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">Live escape window</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80">Source verified</span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-[#46534d]">“{leadContract.source.clause}”</p>
+
+              <div className="aura-reveal mx-auto flex w-full max-w-[420px] flex-col items-center py-12 text-center">
+                <span className="aura-mono text-[11px] uppercase tracking-[0.15em] text-white/45">Last day to act</span>
+                <strong className="aura-display mt-3 text-[clamp(4.4rem,8vw,7.3rem)] font-medium leading-none tracking-[-0.06em] text-white tabular-nums">
+                  {formatShortDate(contract.cancelByDate)}
+                </strong>
+                <span className="mt-4 rounded-full bg-[#F97316] px-4 py-2 text-sm font-semibold text-black">
+                  {daysRemaining} days remaining
+                </span>
+              </div>
+
+              <div className="aura-reveal rounded-2xl border border-white/10 bg-black/45 p-5 shadow-[0_24px_80px_rgba(0,0,0,.32)] backdrop-blur-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{contract.vendor}</p>
+                    <p className="mt-1 text-xs text-white/45">{contract.agreement}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="aura-mono text-[10px] uppercase tracking-[0.12em] text-white/35">Exposure</p>
+                    <p className="mt-1 font-semibold text-white tabular-nums">{currency.format(contract.annualExposure)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid grid-cols-3 gap-3">
+                  <HeroFact label="Today" value="Aug 21" />
+                  <HeroFact label="Cancel by" value={formatShortDate(contract.cancelByDate)} accent />
+                  <HeroFact label="Renews" value={formatShortDate(contract.renewalDate)} />
+                </div>
+
+                <div className="relative mt-5 h-1 overflow-hidden rounded-full bg-white/10">
+                  <div className="absolute inset-y-0 left-0 w-[58%] rounded-full bg-[#F97316]" />
+                </div>
+
+                <p className="mt-4 text-xs leading-5 text-white/50">
+                  Renewal {formatShortDate(contract.renewalDate)} minus the confirmed {contract.noticeDays}-day notice period.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section aria-label="Product principles" className="border-b border-line bg-white">
-        <div className="mx-auto grid max-w-7xl gap-px bg-line sm:grid-cols-3">
-          {principles.map((principle) => (
-            <div key={principle.title} className="js-reveal bg-white px-6 py-7 sm:px-7 sm:py-8">
-              <principle.icon aria-hidden="true" className="text-forest" size={19} />
-              <h2 className="mt-4 text-base font-semibold tracking-[-0.02em]">{principle.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-ink">{principle.text}</p>
-            </div>
-          ))}
+      <section aria-label="TermBeacon workflow" className="overflow-hidden border-b border-black bg-black py-4 text-white">
+        <div className="aura-marquee-track aura-mono flex w-max items-center gap-10 text-[11px] font-semibold uppercase tracking-[0.16em]">
+          {[...Array(2)].flatMap((_, set) =>
+            ["Upload agreement", "Extract terms", "Verify source", "Calculate cancel-by", "Assign owner", "Decide before renewal"].map((item, index) => (
+              <span key={`${set}-${index}`} className="flex items-center gap-10">
+                <span>{item}</span><span className="size-1.5 rounded-full bg-[#F97316]" />
+              </span>
+            )),
+          )}
         </div>
       </section>
 
-      <section className="border-b border-line px-4 py-28 sm:px-6 sm:py-36 lg:px-8 lg:py-44">
+      <section className="px-5 py-24 sm:px-8 sm:py-32 lg:px-12 lg:py-40">
         <div className="mx-auto max-w-7xl">
-          <div className="js-reveal max-w-5xl">
-            <p className="text-base font-semibold text-forest">A renewal date tells you what happens.</p>
-            <h2 className="mt-4 max-w-5xl text-balance text-[clamp(2.55rem,5.4vw,5.6rem)] font-semibold leading-[.94] tracking-[-0.064em]">
-              TermBeacon tells you <span className="inline-flex translate-y-[-0.08em] items-center border border-line bg-white px-3 py-1 text-[.58em] tabular-nums shadow-[0_6px_18px_rgba(18,33,29,.05)]">Sep 2</span> when you still have leverage.
+          <div className="aura-reveal max-w-4xl">
+            <p className="aura-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F97316]">The date that matters</p>
+            <h2 className="aura-display mt-5 text-[clamp(2.8rem,5.5vw,5.7rem)] font-medium leading-[.96] tracking-[-0.05em] text-black">
+              Renewal is the event. Cancel-by is the decision deadline.
             </h2>
           </div>
 
-          <div className="mt-14 grid grid-flow-dense gap-3 lg:grid-cols-12">
-            <article className="js-reveal min-h-72 border border-line bg-white p-6 lg:col-span-7 lg:p-8">
-              <div className="flex h-full flex-col justify-between gap-10">
-                <div>
-                  <p className="text-sm font-semibold text-muted-ink">The contract says</p>
-                  <p className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.045em] sm:text-4xl">Renews November 1.</p>
-                </div>
-                <p className="max-w-2xl text-sm leading-6 text-muted-ink">That date is visible, memorable—and operationally incomplete when the agreement requires advance notice.</p>
-              </div>
-            </article>
-
-            <article className="js-reveal min-h-72 border border-line bg-forest p-6 text-white lg:col-span-5 lg:p-8">
-              <div className="flex h-full flex-col justify-between gap-10">
-                <div>
-                  <p className="text-sm font-semibold text-[#c1d5ce]">The notice requirement says</p>
-                  <p className="mt-4 text-5xl font-semibold tracking-[-0.055em] tabular-nums">60 days</p>
-                </div>
-                <p className="text-sm leading-6 text-[#c7d8d2]">The real operational deadline moves earlier, before the renewal date ever arrives.</p>
-              </div>
-            </article>
-
-            <article className="js-reveal border border-line bg-[#fff8e9] p-6 lg:col-span-4">
-              <Clock3 aria-hidden="true" className="text-risk-warning" size={20} />
-              <p className="mt-8 text-sm font-semibold text-[#75500e]">Cancel by</p>
-              <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-[#6f4709] tabular-nums">Sep 2</p>
-            </article>
-
-            <article className="js-reveal border border-line bg-white p-6 lg:col-span-4">
-              <CircleDollarSign aria-hidden="true" className="text-forest" size={20} />
-              <p className="mt-8 text-sm font-semibold text-muted-ink">Renewal exposure</p>
-              <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] tabular-nums">{currency.format(leadContract.annualExposure)}</p>
-            </article>
-
-            <article className="js-reveal border border-line bg-white p-6 lg:col-span-4">
-              <UserRoundCheck aria-hidden="true" className="text-forest" size={20} />
-              <p className="mt-8 text-sm font-semibold text-muted-ink">Decision owner</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.035em]">{leadContract.owner}</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="how-it-works" className="border-b border-line bg-muted-surface px-4 py-28 sm:px-6 sm:py-36 lg:px-8 lg:py-44">
-        <div className="mx-auto max-w-7xl">
-          <div className="js-reveal grid gap-8 lg:grid-cols-[.72fr_1.28fr] lg:items-end">
-            <h2 className="max-w-3xl text-balance text-[clamp(2.5rem,4.9vw,5rem)] font-semibold leading-[.95] tracking-[-0.06em]">From agreement to a decision your team can defend.</h2>
-            <p className="max-w-2xl text-pretty text-base leading-7 text-muted-ink lg:justify-self-end">No contract chatbot. No opaque legal-risk score. The workflow narrows the document to the terms that control the renewal window and keeps confirmation with a person.</p>
-          </div>
-
-          <div className="workflow-rail mt-14 grid gap-3 lg:flex">
-            {workflow.map((step, index) => (
-              <article key={step.title} className="workflow-panel js-reveal min-w-0 border border-line bg-white p-6 lg:p-7" tabIndex={0}>
+          <div className="mt-14 grid grid-flow-dense gap-4 lg:grid-cols-12">
+            <article className="aura-reveal rounded-2xl border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(17,24,39,.05)] sm:p-8 lg:col-span-7">
+              <div className="flex min-h-[330px] flex-col justify-between">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="grid size-10 place-items-center bg-muted-surface text-forest"><step.icon aria-hidden="true" size={18} /></span>
-                  <span className="text-xs font-semibold tabular-nums text-muted-ink">0{index + 1}</span>
+                  <span className="aura-mono text-[11px] uppercase tracking-[0.14em] text-[#4B5563]">Contract term</span>
+                  <CalendarDays aria-hidden="true" className="text-[#F97316]" size={20} />
                 </div>
-                <h3 className="mt-8 text-2xl font-semibold tracking-[-0.04em]">{step.title}</h3>
-                <p className="mt-3 max-w-md text-sm leading-6 text-muted-ink">{step.copy}</p>
-                <div className="workflow-detail mt-8 border-t border-line pt-5">
-                  <p className="text-sm font-semibold tabular-nums">{step.proof}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-ink">{step.detail}</p>
+                <div>
+                  <p className="aura-display text-[clamp(3.8rem,8vw,7rem)] font-medium leading-none tracking-[-0.055em] text-black tabular-nums">Nov 1</p>
+                  <p className="mt-4 max-w-xl text-base leading-7 text-[#4B5563]">A memorable date, but already too late if the agreement requires notice before renewal.</p>
                 </div>
-              </article>
-            ))}
+              </div>
+            </article>
+
+            <article className="aura-reveal rounded-2xl bg-[#191C21] p-6 text-white sm:p-8 lg:col-span-5">
+              <div className="flex min-h-[330px] flex-col justify-between">
+                <span className="aura-mono text-[11px] uppercase tracking-[0.14em] text-white/40">Notice requirement</span>
+                <div>
+                  <p className="aura-display text-[clamp(4rem,7vw,6.4rem)] font-medium leading-none tracking-[-0.055em] tabular-nums">{contract.noticeDays}</p>
+                  <p className="mt-2 text-lg text-[#FB923C]">days earlier</p>
+                  <p className="mt-5 max-w-sm text-sm leading-6 text-white/55">The agreement shifts the operational deadline forward.</p>
+                </div>
+              </div>
+            </article>
+
+            <MetricCard icon={Clock3} label="Cancel by" value={formatShortDate(contract.cancelByDate)} tone="orange" />
+            <MetricCard icon={FileCheck2} label="Source" value={`Page ${contract.source.page} · § ${contract.source.section}`} />
+            <MetricCard icon={UserRoundCheck} label="Owner" value={contract.owner} />
           </div>
         </div>
       </section>
 
-      <section id="escape-window" className="border-b border-line px-4 py-28 sm:px-6 sm:py-36 lg:px-8 lg:py-44">
-        <div id="proof-stage" className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.66fr_1.34fr] lg:gap-16">
-          <div id="proof-copy" className="js-reveal h-fit lg:pt-8">
-            <p className="text-sm font-semibold text-forest">One operational view. Three questions.</p>
-            <h2 className="mt-4 max-w-xl text-balance text-[clamp(2.55rem,4.6vw,4.8rem)] font-semibold leading-[.95] tracking-[-0.06em]">What needs a decision, when is the last day to act, and what is at stake?</h2>
-            <p className="mt-6 max-w-xl text-pretty leading-7 text-muted-ink">The Decision Inbox sorts attention. The Escape Window explains the deadline. The source view shows exactly what the confirmed date came from.</p>
-            <Button asChild variant="outline" className="mt-7">
-              <Link href="/app">Open the Decision Inbox <ArrowRight aria-hidden="true" size={16} /></Link>
-            </Button>
-          </div>
-
-          <div className="space-y-8 lg:space-y-24">
-            <div className="js-stack-card sticky top-24 z-10 bg-canvas pb-3">
-              <DecisionInbox embedded />
-            </div>
-            <div className="js-stack-card sticky top-28 z-20 bg-canvas pb-3">
-              <EscapeWindow contract={leadContract} />
-            </div>
-            <div className="js-stack-card sticky top-32 z-30 bg-canvas pb-3">
-              <SourceClause contract={leadContract} marketing />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-line bg-white px-4 py-28 sm:px-6 sm:py-36 lg:px-8 lg:py-44">
+      <section id="how-it-works" className="bg-[#191C21] px-5 py-24 text-white sm:px-8 sm:py-32 lg:px-12 lg:py-40">
         <div className="mx-auto max-w-7xl">
-          <div className="js-reveal flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold text-forest">The evidence should survive the AI.</p>
-              <h2 className="mt-4 text-balance text-[clamp(2.45rem,4.7vw,4.8rem)] font-semibold leading-[.95] tracking-[-0.06em]">Every suggested term stays attached to agreement language.</h2>
-            </div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-muted-ink" aria-hidden="true"><span>Swipe evidence</span><ArrowRight size={15} /></div>
+          <div className="aura-reveal grid gap-8 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+            <h2 className="aura-display max-w-3xl text-[clamp(2.7rem,5vw,5.2rem)] font-medium leading-[.96] tracking-[-0.05em]">
+              Three moves from PDF to a protected decision window.
+            </h2>
+            <p className="max-w-xl text-base leading-7 text-white/55 lg:justify-self-end">
+              Focused inputs, visible source language, and one deterministic deadline. No generic contract chat layer.
+            </p>
           </div>
 
-          <div className="evidence-rail mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
-            {contracts.slice(0, 3).map((contract, index) => (
-              <article id={`evidence-${index + 1}`} key={contract.id} className="js-reveal min-w-[88%] snap-start border border-line bg-canvas p-6 sm:min-w-[62%] lg:min-w-[42%] lg:p-7">
-                <div className="flex items-center justify-between gap-4 text-xs font-semibold text-muted-ink">
-                  <span>{contract.vendor}</span>
-                  <span>Page {contract.source.page} · § {contract.source.section}</span>
+          <div className="aura-accordion mt-14 flex flex-col gap-3 lg:flex-row">
+            {workflow.map((step, index) => (
+              <article
+                key={step.title}
+                tabIndex={0}
+                className="aura-accordion-card aura-reveal group min-w-0 rounded-2xl border border-white/10 bg-black/35 p-6 outline-none focus-visible:ring-2 focus-visible:ring-[#F97316] sm:p-7"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="grid size-11 place-items-center rounded-xl bg-[#F97316] text-black">
+                    <step.icon aria-hidden="true" size={18} />
+                  </span>
+                  <span className="aura-mono text-[11px] font-semibold text-white/30">0{index + 1}</span>
                 </div>
-                <p className="mt-8 text-lg leading-8 text-[#38463f]">“{contract.source.clause}”</p>
-                <div className="mt-8 flex items-end justify-between gap-5 border-t border-line pt-5">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-ink">Cancel by</p>
-                    <p className="mt-1 text-xl font-semibold tabular-nums">{formatShortDate(contract.cancelByDate)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-semibold text-muted-ink">Notice</p>
-                    <p className="mt-1 text-xl font-semibold tabular-nums">{contract.noticeDays} days</p>
-                  </div>
+                <h3 className="aura-display mt-8 text-3xl font-medium tracking-[-0.035em]">{step.title}</h3>
+                <p className="aura-accordion-copy mt-4 max-w-md text-sm leading-6 text-white/55">{step.copy}</p>
+                <div className="mt-8 border-t border-white/10 pt-4">
+                  <span className="aura-mono text-[10px] uppercase tracking-[0.13em] text-[#FB923C]">{step.meta}</span>
                 </div>
               </article>
             ))}
@@ -263,68 +237,219 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="security" className="border-b border-[#29483f] bg-ink px-4 py-28 text-white sm:px-6 sm:py-36 lg:px-8 lg:py-44">
-        <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
-          <div className="js-reveal">
-            <p className="text-sm font-semibold text-[#b8cec6]">Trust starts with showing your work.</p>
-            <h2 className="mt-4 max-w-2xl text-balance text-[clamp(2.5rem,4.8vw,4.9rem)] font-semibold leading-[.95] tracking-[-0.06em]">AI can suggest the terms. It does not get the final word.</h2>
-            <p className="mt-6 max-w-xl text-pretty leading-7 text-[#bdcec7]">TermBeacon is built around traceability, human confirmation and deterministic date calculation. It does not claim legal advice, certifications or controls that are not implemented and documented.</p>
+      <section id="escape-window" className="px-5 py-24 sm:px-8 sm:py-32 lg:px-12 lg:py-40">
+        <div id="aura-proof-stage" className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
+          <div id="aura-proof-copy" className="h-fit">
+            <p className="aura-reveal aura-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F97316]">The operating view</p>
+            <h2 className="aura-reveal aura-display mt-5 max-w-xl text-[clamp(2.7rem,4.8vw,5rem)] font-medium leading-[.96] tracking-[-0.05em] text-black">
+              What needs attention. When you must act. What it is worth.
+            </h2>
+            <p className="aura-reveal mt-6 max-w-lg text-base leading-7 text-[#4B5563]">
+              The product stays narrow on purpose: decision queue, supporting clause, escape window, owner and outcome.
+            </p>
           </div>
 
-          <div className="grid gap-px bg-white/12 sm:grid-cols-2">
-            {[
-              [ShieldCheck, "Human confirmation", "Suggested terms stay untrusted until a person confirms them against the source."],
-              [FileCheck2, "Source visibility", "The agreement clause remains near the extracted term and calculated deadline."],
-              [Check, "Explainable calculation", "Cancel-by is derived from confirmed renewal date minus confirmed notice period."],
-              [Clock3, "Operational scope", "Risk signals use deadline, exposure, owner and decision state—not opaque legal scoring."],
-            ].map(([Icon, title, text]) => {
-              const ItemIcon = Icon as typeof ShieldCheck;
-              return (
-                <article key={String(title)} className="js-reveal bg-ink p-6 sm:p-7">
-                  <ItemIcon aria-hidden="true" className="text-[#b8cec6]" size={20} />
-                  <h3 className="mt-6 font-semibold">{String(title)}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#bdcec7]">{String(text)}</p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing" className="border-b border-line px-4 py-28 sm:px-6 sm:py-36 lg:px-8 lg:py-44">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_.78fr] lg:items-start">
-          <div className="js-reveal max-w-4xl">
-            <p className="text-sm font-semibold text-forest">A focused product should have focused pricing.</p>
-            <h2 className="mt-4 text-balance text-[clamp(2.6rem,5.2vw,5.4rem)] font-semibold leading-[.94] tracking-[-0.064em]">Protect the next renewal before building a procurement department around it.</h2>
-            <p className="mt-6 max-w-2xl text-pretty leading-7 text-muted-ink">The launch plan is designed for founder-led, finance, operations and procurement teams that need renewal decisions visible and owned.</p>
-          </div>
-
-          <div className="js-reveal border border-line bg-white p-6 shadow-[0_16px_44px_rgba(18,33,29,.06)] sm:p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div><p className="font-semibold">Team</p><p className="mt-1 text-sm text-muted-ink">Vendor renewal control</p></div>
-              <span className="border border-line bg-muted-surface px-2 py-1 text-xs font-semibold text-forest">Launch plan</span>
+          <div className="space-y-10 lg:space-y-24">
+            <div className="aura-scale rounded-2xl border border-black/10 bg-white p-5 shadow-[0_24px_80px_rgba(17,24,39,.08)] sm:p-7">
+              <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-5">
+                <div>
+                  <p className="text-sm font-semibold">Decision Inbox</p>
+                  <p className="mt-1 text-xs text-[#4B5563]">Sorted by last day to act</p>
+                </div>
+                <span className="rounded-full bg-[#FFF7ED] px-3 py-1.5 text-xs font-semibold text-[#C2410C]">3 need attention</span>
+              </div>
+              <div className="divide-y divide-black/10">
+                {inboxRows.map(([vendor, days, exposure]) => (
+                  <div key={vendor} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 py-4">
+                    <span className="text-sm font-semibold">{vendor}</span>
+                    <span className="aura-mono text-[11px] text-[#C2410C]">{days}</span>
+                    <span className="text-sm font-medium tabular-nums">{exposure}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="mt-7 text-5xl font-semibold tracking-[-0.055em] tabular-nums">$49<span className="text-sm font-medium tracking-normal text-muted-ink"> / month</span></p>
-            <ul className="mt-7 grid gap-3">
-              {pricingFeatures.map((feature) => <li key={feature} className="flex items-start gap-2.5 text-sm leading-6"><Check aria-hidden="true" className="mt-1 shrink-0 text-positive" size={15} />{feature}</li>)}
-            </ul>
-            <Button asChild className="mt-8 w-full" size="lg"><Link href="/app/upload">Start Free</Link></Button>
-            <p className="mt-3 text-center text-xs leading-5 text-muted-ink">Product preview · Checkout is not enabled yet.</p>
+
+            <div className="aura-scale overflow-hidden rounded-2xl border border-[#2A2524] bg-[#191C21] text-white shadow-[0_30px_90px_rgba(0,0,0,.18)]">
+              <div className="grid lg:grid-cols-[1.08fr_.92fr]">
+                <div className="border-b border-white/10 p-6 lg:border-b-0 lg:border-r">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="aura-mono text-[11px] uppercase tracking-[0.13em] text-white/40">Source agreement</span>
+                    <span className="text-xs text-white/35">Page {contract.source.page}</span>
+                  </div>
+                  <p className="mt-10 text-lg leading-8 text-white/75">“{contract.source.clause}”</p>
+                </div>
+                <div className="p-6">
+                  <span className="aura-mono text-[11px] uppercase tracking-[0.13em] text-[#FB923C]">Confirmed terms</span>
+                  <dl className="mt-6 divide-y divide-white/10">
+                    <Term label="Renewal" value={formatShortDate(contract.renewalDate)} />
+                    <Term label="Notice" value={`${contract.noticeDays} days`} />
+                    <Term label="Auto-renew" value="Yes" />
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            <div className="aura-scale rounded-2xl border border-black/10 bg-[#F97316] p-6 text-black shadow-[0_28px_80px_rgba(249,115,22,.22)] sm:p-8">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div>
+                  <p className="aura-mono text-[11px] uppercase tracking-[0.13em] text-black/55">Escape window</p>
+                  <p className="aura-display mt-3 text-5xl font-medium tracking-[-0.055em] tabular-nums">{formatShortDate(contract.cancelByDate)}</p>
+                  <p className="mt-2 text-sm font-medium text-black/65">{daysRemaining} days left to decide</p>
+                </div>
+                <div className="rounded-xl bg-black px-5 py-4 text-white">
+                  <p className="aura-mono text-[10px] uppercase tracking-[0.12em] text-white/45">Exposure</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums">{currency.format(contract.annualExposure)}</p>
+                </div>
+              </div>
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                {["Renew", "Renegotiate", "Cancel"].map((decision) => (
+                  <span key={decision} className="rounded-lg border border-black/20 bg-white/35 px-4 py-3 text-center text-sm font-semibold">{decision}</span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-acid px-4 py-24 sm:px-6 sm:py-32 lg:px-8 lg:py-40">
-        <div className="js-reveal mx-auto max-w-6xl text-center">
-          <p className="text-sm font-semibold text-[#35400c]">{daysRemaining} days until the demo contract’s cancel-by date.</p>
-          <h2 className="mx-auto mt-4 max-w-5xl text-balance text-[clamp(2.8rem,6vw,6.4rem)] font-semibold leading-[.9] tracking-[-0.07em] text-ink">Decide before the contract decides for you.</h2>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty leading-7 text-[#4d591e]">Upload a vendor agreement and make the last actionable date visible while your team can still use it.</p>
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg"><Link href="/app/upload">Find My Cancel-By Dates <ArrowRight aria-hidden="true" size={17} /></Link></Button>
-            <Button asChild variant="outline" size="lg" className="border-ink/20 bg-transparent hover:bg-white/40"><a href="#escape-window">See the Escape Window</a></Button>
+      <section id="security" className="bg-black px-5 py-24 text-white sm:px-8 sm:py-32 lg:px-12 lg:py-40">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
+          <div className="aura-reveal">
+            <span className="aura-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#FB923C]">Traceable by design</span>
+            <h2 className="aura-display mt-5 max-w-3xl text-[clamp(2.7rem,4.8vw,5rem)] font-medium leading-[.96] tracking-[-0.05em]">
+              AI does not get the final word.
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-7 text-white/55">
+              TermBeacon keeps source language, human confirmation and deterministic date math visible in the same operating flow.
+            </p>
+          </div>
+
+          <div className="grid gap-3">
+            <SecurityRow icon={FileCheck2} title="Source stays visible" copy="Extracted renewal terms point back to the supporting agreement language." />
+            <SecurityRow icon={ShieldCheck} title="Human confirmation" copy="Suggested terms do not become trusted product state until a person confirms them." />
+            <SecurityRow icon={Clock3} title="Explainable deadline" copy="Cancel-by is calculated from confirmed renewal date minus confirmed notice period." />
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="px-5 py-24 sm:px-8 sm:py-32 lg:px-12 lg:py-40">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_.8fr] lg:items-center">
+          <div className="aura-reveal">
+            <p className="aura-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F97316]">One focused plan</p>
+            <h2 className="aura-display mt-5 max-w-3xl text-[clamp(2.7rem,5vw,5.2rem)] font-medium leading-[.96] tracking-[-0.05em] text-black">
+              Protect the renewal decision before adding procurement complexity.
+            </h2>
+          </div>
+
+          <div className="aura-reveal rounded-2xl border border-black/10 bg-white p-7 shadow-[0_24px_80px_rgba(17,24,39,.08)] sm:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold">Team</p>
+                <p className="mt-1 text-sm text-[#4B5563]">Vendor renewal control</p>
+              </div>
+              <span className="rounded-full bg-black px-3 py-1.5 text-xs font-semibold text-white">Launch</span>
+            </div>
+            <p className="aura-display mt-8 text-6xl font-medium tracking-[-0.055em] tabular-nums">$49<span className="text-base font-normal tracking-normal text-[#4B5563]"> / month</span></p>
+            <ul className="mt-8 grid gap-3 text-sm">
+              {["PDF upload + extraction", "Source-backed term review", "Escape Window", "Owner + renewal decision", "Retryable failed extraction"].map((item) => (
+                <li key={item} className="flex items-center gap-3">
+                  <span className="grid size-5 place-items-center rounded-full bg-[#FFF7ED] text-[#F97316]"><Check aria-hidden="true" size={12} /></span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/app/upload"
+              className="mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#F97316] px-6 text-sm font-semibold text-black transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black motion-reduce:transition-none"
+            >
+              Start Free
+            </Link>
+            <p className="mt-3 text-center text-xs leading-5 text-[#6B7280]">Product preview · checkout is not enabled yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-5 sm:px-8 sm:pb-8">
+        <div className="mx-auto max-w-[1440px] overflow-hidden rounded-2xl bg-[#191C21] px-6 py-20 text-white sm:px-10 sm:py-24 lg:px-14">
+          <div className="aura-reveal grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <p className="aura-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#FB923C]">Before the window closes</p>
+              <h2 className="aura-display mt-5 max-w-5xl text-[clamp(3rem,5.8vw,6.2rem)] font-medium leading-[.94] tracking-[-0.055em]">
+                Decide before the contract decides for you.
+              </h2>
+            </div>
+            <Link
+              href="/app/upload"
+              className="group inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#F97316] px-7 text-sm font-semibold text-black transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transition-none"
+            >
+              Find My Cancel-By Dates
+              <ArrowRight aria-hidden="true" size={17} className="transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none" />
+            </Link>
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+function HeroFact({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div>
+      <p className="aura-mono text-[9px] uppercase tracking-[0.1em] text-white/30">{label}</p>
+      <p className={`mt-1 text-sm font-semibold tabular-nums ${accent ? "text-[#FB923C]" : "text-white"}`}>{value}</p>
+    </div>
+  );
+}
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  tone = "light",
+}: {
+  icon: typeof Clock3;
+  label: string;
+  value: string;
+  tone?: "light" | "orange";
+}) {
+  const orange = tone === "orange";
+  return (
+    <article className={`aura-reveal rounded-2xl p-6 lg:col-span-4 ${orange ? "bg-[#F97316] text-black" : "border border-black/10 bg-white"}`}>
+      <Icon aria-hidden="true" size={20} className={orange ? "text-black" : "text-[#F97316]"} />
+      <p className={`aura-mono mt-10 text-[10px] uppercase tracking-[0.13em] ${orange ? "text-black/55" : "text-[#6B7280]"}`}>{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] tabular-nums">{value}</p>
+    </article>
+  );
+}
+
+function Term({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3">
+      <dt className="text-sm text-white/45">{label}</dt>
+      <dd className="text-sm font-semibold tabular-nums">{value}</dd>
+    </div>
+  );
+}
+
+function SecurityRow({
+  icon: Icon,
+  title,
+  copy,
+}: {
+  icon: typeof ShieldCheck;
+  title: string;
+  copy: string;
+}) {
+  return (
+    <article className="aura-reveal group rounded-2xl border border-white/10 bg-[#191C21] p-6 transition-transform duration-300 ease-out hover:-translate-y-1 motion-reduce:transition-none">
+      <div className="flex items-start gap-4">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#F97316] text-black">
+          <Icon aria-hidden="true" size={18} />
+        </span>
+        <div>
+          <h3 className="text-base font-semibold">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-white/50">{copy}</p>
+        </div>
+      </div>
+    </article>
   );
 }
