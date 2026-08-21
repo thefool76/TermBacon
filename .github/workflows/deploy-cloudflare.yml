@@ -42,6 +42,9 @@ jobs:
       - name: Generate Cloudflare binding types
         run: npm run cf-typegen
 
+      - name: Write immutable release marker
+        run: printf '%s\n' "$GITHUB_SHA" > public/release.txt
+
       - name: Type-check
         id: typecheck
         run: npm run typecheck
@@ -159,9 +162,9 @@ jobs:
           for attempt in 1 2 3 4 5; do
             if curl --fail --silent --show-error --location \
               -H "Cache-Control: no-cache" \
-              "${WORKER_URL}/?release=${EXPECTED_RELEASE}&attempt=${attempt}" \
+              "${WORKER_URL}/release.txt?release=${EXPECTED_RELEASE}&attempt=${attempt}" \
               -o "$BODY"; then
-              if grep -Fq "data-release=\"${EXPECTED_RELEASE}\"" "$BODY"; then
+              if grep -Fxq "$EXPECTED_RELEASE" "$BODY"; then
                 echo "Verified ${WORKER_URL} is serving release ${EXPECTED_RELEASE}."
                 exit 0
               fi
