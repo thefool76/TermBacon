@@ -1,0 +1,4 @@
+# Obtain these from the Polar dashboard. Never commit .dev.vars.
+POLAR_ACCESS_TOKEN=
+POLAR_WEBHOOK_SECRET=
+POLAR_PRODUCT_ID=
