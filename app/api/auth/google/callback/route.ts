@@ -27,23 +27,21 @@ export async function GET(request: NextRequest) {
     const profile = await exchangeGoogleCode({ code, verifier, origin: request.nextUrl.origin });
     const anonymousWorkspaceId = store.get(ANON_WORKSPACE_COOKIE)?.value ?? null;
     const { token, session } = await createSessionForGoogleProfile(profile, anonymousWorkspaceId);
-
     const response = NextResponse.redirect(new URL(nextPath, request.nextUrl.origin), 302);
+    response.headers.set("Cache-Control", "no-store");
     response.cookies.set(AUTH_SESSION_COOKIE, token, sessionCookieOptions());
     response.cookies.set(ANON_WORKSPACE_COOKIE, session.workspace.id, sessionCookieOptions());
     clearOAuthCookies(response);
     return response;
   } catch (error) {
-    console.error(JSON.stringify({
-      event: "google_oauth_callback_failed",
-      message: error instanceof Error ? error.message : "Unknown OAuth error",
-    }));
+    console.error(JSON.stringify({ event: "google_oauth_callback_failed", message: error instanceof Error ? error.message : "Unknown OAuth error" }));
     return oauthFailure(request, "oauth");
   }
 }
 
 function oauthFailure(request: NextRequest, reason: "oauth" | "state") {
   const response = NextResponse.redirect(new URL(`/sign-in?error=${reason}`, request.nextUrl.origin), 302);
+  response.headers.set("Cache-Control", "no-store");
   clearOAuthCookies(response);
   return response;
 }

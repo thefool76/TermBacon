@@ -52,10 +52,7 @@ CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS workspace_members_user_idx ON workspace_members(user_id);
 `;
 
-const googleTokenSchema = z.object({
-  access_token: z.string().min(1),
-});
-
+const googleTokenSchema = z.object({ access_token: z.string().min(1) });
 const googleProfileSchema = z.object({
   sub: z.string().min(1),
   email: z.string().email(),
@@ -66,7 +63,6 @@ const googleProfileSchema = z.object({
 });
 
 type GoogleProfile = z.infer<typeof googleProfileSchema>;
-
 type SessionRow = {
   user_id: string;
   user_name: string;
@@ -112,6 +108,8 @@ export async function ensureAuthSchema() {
   return env;
 }
 
+type AuthDatabase = Awaited<ReturnType<typeof ensureAuthSchema>>["DB"];
+
 export async function getAnonymousWorkspaceId() {
   return (await cookies()).get(ANON_WORKSPACE_COOKIE)?.value ?? null;
 }
@@ -127,15 +125,8 @@ export async function getSessionByToken(token: string): Promise<AuthSession | nu
   const env = await ensureAuthSchema();
   const tokenHash = await sha256Hex(token);
   const row = await env.DB.prepare(`
-    SELECT
-      s.user_id,
-      u.name AS user_name,
-      u.email,
-      u.avatar_url,
-      s.workspace_id,
-      w.name AS workspace_name,
-      wm.role,
-      s.expires_at
+    SELECT s.user_id, u.name AS user_name, u.email, u.avatar_url,
+      s.workspace_id, w.name AS workspace_name, wm.role, s.expires_at
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     JOIN workspaces w ON w.id = s.workspace_id
@@ -159,7 +150,6 @@ export async function createGoogleAuthorization(origin: string, requestedNext: s
   const challenge = await sha256Base64Url(verifier);
   const nextPath = sanitizeNextPath(requestedNext);
   const redirectUri = `${origin}/api/auth/google/callback`;
-
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -198,7 +188,6 @@ export async function exchangeGoogleCode(input: { code: string; verifier: string
 
   if (!tokenResponse.ok) throw new Error(`Google token exchange failed with status ${tokenResponse.status}.`);
   const token = googleTokenSchema.parse(await tokenResponse.json());
-
   const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
     headers: { Authorization: `Bearer ${token.access_token}` },
   });
@@ -223,12 +212,10 @@ export async function createSessionForGoogleProfile(profile: GoogleProfile, anon
   if (!user) {
     user = { id: crypto.randomUUID() };
     await db.prepare("INSERT INTO users (id, google_sub, email, name, avatar_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .bind(user.id, profile.sub, email, name, profile.picture, now, now)
-      .run();
+      .bind(user.id, profile.sub, email, name, profile.picture, now, now).run();
   } else {
     await db.prepare("UPDATE users SET google_sub = ?, email = ?, name = ?, avatar_url = ?, updated_at = ? WHERE id = ?")
-      .bind(profile.sub, email, name, profile.picture, now, user.id)
-      .run();
+      .bind(profile.sub, email, name, profile.picture, now, user.id).run();
   }
 
   let workspace = await db.prepare(`
@@ -241,13 +228,11 @@ export async function createSessionForGoogleProfile(profile: GoogleProfile, anon
   `).bind(user.id).first<{ id: string; name: string; role: "owner" | "member" }>();
 
   const validAnonymousWorkspace = isUuid(anonymousWorkspaceId) ? anonymousWorkspaceId : null;
-
   if (!workspace) {
     let workspaceId = crypto.randomUUID();
     if (validAnonymousWorkspace) {
       const claimed = await db.prepare("SELECT id FROM workspaces WHERE id = ? LIMIT 1")
-        .bind(validAnonymousWorkspace)
-        .first<{ id: string }>();
+        .bind(validAnonymousWorkspace).first<{ id: string }>();
       if (!claimed && await hasAnonymousData(db, validAnonymousWorkspace)) workspaceId = validAnonymousWorkspace;
     }
 
@@ -261,8 +246,7 @@ export async function createSessionForGoogleProfile(profile: GoogleProfile, anon
     workspace = { id: workspaceId, name: workspaceName, role: "owner" };
   } else if (validAnonymousWorkspace && validAnonymousWorkspace !== workspace.id) {
     const claimed = await db.prepare("SELECT id FROM workspaces WHERE id = ? LIMIT 1")
-      .bind(validAnonymousWorkspace)
-      .first<{ id: string }>();
+      .bind(validAnonymousWorkspace).first<{ id: string }>();
     if (!claimed && await hasAnonymousData(db, validAnonymousWorkspace)) {
       await db.batch([
         db.prepare("UPDATE contracts SET workspace_id = ? WHERE workspace_id = ?").bind(workspace.id, validAnonymousWorkspace),
@@ -303,23 +287,11 @@ export function sanitizeNextPath(value: string | null | undefined) {
 }
 
 export function sessionCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-  };
+  return { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: SESSION_TTL_SECONDS };
 }
 
 export function oauthCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: OAUTH_TTL_SECONDS,
-  };
+  return { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: OAUTH_TTL_SECONDS };
 }
 
 function workspaceNameFor(name: string) {
@@ -331,11 +303,10 @@ function isUuid(value: string | null): value is string {
   return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
 }
 
-async function hasAnonymousData(db: D1Database, workspaceId: string) {
+async function hasAnonymousData(db: AuthDatabase, workspaceId: string) {
   try {
     const row = await db.prepare(`
-      SELECT
-        (SELECT COUNT(*) FROM contracts WHERE workspace_id = ?) +
+      SELECT (SELECT COUNT(*) FROM contracts WHERE workspace_id = ?) +
         (SELECT COUNT(*) FROM contract_files WHERE workspace_id = ?) AS item_count
     `).bind(workspaceId, workspaceId).first<{ item_count: number }>();
     return Number(row?.item_count ?? 0) > 0;

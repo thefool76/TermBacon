@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
     request.nextUrl.origin,
     request.nextUrl.searchParams.get("next"),
   );
-
   const response = NextResponse.redirect(authorizationUrl);
+  response.headers.set("Cache-Control", "no-store");
   const options = oauthCookieOptions();
   response.cookies.set(OAUTH_STATE_COOKIE, state, options);
   response.cookies.set(OAUTH_VERIFIER_COOKIE, verifier, options);

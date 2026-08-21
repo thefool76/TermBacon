@@ -68,6 +68,7 @@ jobs:
             echo "Google OAuth secrets are not configured in GitHub yet; auth stays in temporary-workspace mode."
             exit 0
           fi
+          trap 'rm -f .auth-secrets.json' EXIT
           node --input-type=module <<'NODE'
           import { writeFileSync } from "node:fs";
           writeFileSync(".auth-secrets.json", JSON.stringify({
@@ -76,4 +77,3 @@ jobs:
           }));
           NODE
           npx wrangler secret bulk .auth-secrets.json
-          rm -f .auth-secrets.json

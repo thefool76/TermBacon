@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
 
   const token = (await cookies()).get(AUTH_SESSION_COOKIE)?.value ?? null;
   await revokeSessionToken(token);
-
   const response = NextResponse.json({ ok: true });
+  response.headers.set("Cache-Control", "no-store");
   response.cookies.set(AUTH_SESSION_COOKIE, "", { ...sessionCookieOptions(), maxAge: 0 });
   return response;
 }
