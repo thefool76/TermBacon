@@ -46,6 +46,10 @@ jobs:
         id: typecheck
         run: npm run typecheck
 
+      - name: Test contract extraction guards
+        id: extraction_tests
+        run: npm run test:extraction
+
       - name: Verify Next.js production build
         id: next_build
         run: npm run build
@@ -73,6 +77,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
+          EXTRACTION_TESTS_OUTCOME: ${{ steps.extraction_tests.outcome }}
           BUILD_OUTCOME: ${{ steps.next_build.outcome }}
           MIGRATIONS_OUTCOME: ${{ steps.migrations.outcome }}
           SMOKE_OUTCOME: ${{ steps.auth_smoke.outcome }}
@@ -85,6 +90,9 @@ jobs:
           if [ "$TYPECHECK_OUTCOME" != "success" ]; then
             CONTEXT="termbeacon/predeploy-typecheck"
             DESCRIPTION="Type-check failed before deployment"
+          elif [ "$EXTRACTION_TESTS_OUTCOME" != "success" ]; then
+            CONTEXT="termbeacon/predeploy-extraction-tests"
+            DESCRIPTION="Contract extraction guard tests failed"
           elif [ "$BUILD_OUTCOME" != "success" ]; then
             CONTEXT="termbeacon/predeploy-build"
             DESCRIPTION="Next.js production build failed before deployment"
@@ -97,7 +105,7 @@ jobs:
           else
             STATE="success"
             CONTEXT="termbeacon/predeploy-ok"
-            DESCRIPTION="Typecheck, build, migrations and D1 auth smoke passed"
+            DESCRIPTION="Typecheck, extraction tests, build, migrations and D1 auth smoke passed"
           fi
           curl --fail-with-body --silent --show-error \
             -X POST \

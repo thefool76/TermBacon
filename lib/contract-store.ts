@@ -91,9 +91,51 @@ export async function readContractFile(contractId: string, workspaceId: string) 
 }
 
 export async function saveConfirmedContract(workspaceId: string, input: { id: string; vendor: string; agreement: string; annualExposure: number; renewalDate: string; noticeDays: number; cancelByDate: string; owner: string; autoRenew: boolean; fileName: string; sourcePage: number; sourceSection: string; sourceClause: string; extractionConfidence: number }) {
-  const env = await ensureContractSchema(); const now = new Date().toISOString();
-  await env.DB.prepare(`INSERT INTO contracts (id, workspace_id, vendor, agreement, annual_exposure, renewal_date, notice_days, cancel_by_date, owner, auto_renew, decision, status, file_key, file_name, source_page, source_section, source_clause, extraction_confidence, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'confirmed', ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(input.id, workspaceId, input.vendor, input.agreement, input.annualExposure, input.renewalDate, input.noticeDays, input.cancelByDate, input.owner, input.autoRenew ? 1 : 0, `d1:${input.id}`, input.fileName, input.sourcePage, input.sourceSection, input.sourceClause, input.extractionConfidence, now, now).run();
+  const env = await ensureContractSchema();
+  const now = new Date().toISOString();
+  await env.DB.prepare(`
+    INSERT INTO contracts (
+      id, workspace_id, vendor, agreement, annual_exposure, renewal_date, notice_days,
+      cancel_by_date, owner, auto_renew, decision, status, file_key, file_name,
+      source_page, source_section, source_clause, extraction_confidence, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'confirmed', ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      vendor = excluded.vendor,
+      agreement = excluded.agreement,
+      annual_exposure = excluded.annual_exposure,
+      renewal_date = excluded.renewal_date,
+      notice_days = excluded.notice_days,
+      cancel_by_date = excluded.cancel_by_date,
+      owner = excluded.owner,
+      auto_renew = excluded.auto_renew,
+      status = 'confirmed',
+      file_name = excluded.file_name,
+      source_page = excluded.source_page,
+      source_section = excluded.source_section,
+      source_clause = excluded.source_clause,
+      extraction_confidence = excluded.extraction_confidence,
+      updated_at = excluded.updated_at
+    WHERE contracts.workspace_id = excluded.workspace_id
+  `).bind(
+    input.id,
+    workspaceId,
+    input.vendor,
+    input.agreement,
+    input.annualExposure,
+    input.renewalDate,
+    input.noticeDays,
+    input.cancelByDate,
+    input.owner,
+    input.autoRenew ? 1 : 0,
+    `d1:${input.id}`,
+    input.fileName,
+    input.sourcePage,
+    input.sourceSection,
+    input.sourceClause,
+    input.extractionConfidence,
+    now,
+    now,
+  ).run();
 }
 
 export async function updateDecision(id: string, decision: Decision, workspaceId: string) {

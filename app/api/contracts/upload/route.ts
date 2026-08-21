@@ -1,82 +1,121 @@
 import { NextResponse } from "next/server";
-import { buildRenewalContext, extractionJsonSchema, normalizeSuggestedDate, parseExtractionResponse } from "@/lib/contract-extraction";
-import { ensureContractSchema, getWorkspaceId, storeContractFile } from "@/lib/contract-store";
+import {
+  cleanupStaleIngestions,
+  createIngestionRecord,
+  deleteIngestionRecord,
+  findActiveIngestionByHash,
+  getDraftFromIngestion,
+  hashContractFile,
+  IngestionError,
+  processContractIngestion,
+} from "@/lib/contract-ingestion";
+import { getWorkspaceId, storeContractFile } from "@/lib/contract-store";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const workspaceId = await getWorkspaceId();
   if (!workspaceId) {
-    return NextResponse.json({ error: "Workspace session missing. Reload the app and try again." }, { status: 401 });
+    return NextResponse.json({ error: "Workspace session missing. Sign in again and retry." }, { status: 401 });
   }
 
   const form = await request.formData();
   const value = form.get("file");
-
   if (!(value instanceof File)) {
     return NextResponse.json({ error: "Choose a PDF agreement to continue." }, { status: 400 });
   }
-  if (value.type !== "application/pdf" && !value.name.toLowerCase().endsWith(".pdf")) {
-    return NextResponse.json({ error: "TermBeacon currently accepts PDF agreements only." }, { status: 415 });
-  }
-  if (value.size <= 0 || value.size > MAX_FILE_BYTES) {
-    return NextResponse.json({ error: "PDFs must be between 1 byte and 10 MB." }, { status: 413 });
+
+  const validationError = await validatePdf(value);
+  if (validationError) return validationError;
+
+  await cleanupStaleIngestions(workspaceId);
+  const contentHash = await hashContractFile(value);
+  const existing = await findActiveIngestionByHash(workspaceId, contentHash);
+
+  if (existing) {
+    if (existing.status === "needs_review") {
+      const draft = await getDraftFromIngestion(existing.contract_id, workspaceId);
+      if (draft) return NextResponse.json({ contract: draft, duplicate: true, status: existing.status });
+    }
+    if (existing.status === "confirmed") {
+      return NextResponse.json({
+        error: "This agreement has already been uploaded and confirmed.",
+        contractId: existing.contract_id,
+        status: existing.status,
+        duplicate: true,
+      }, { status: 409 });
+    }
+    if (existing.status === "extraction_failed") {
+      return NextResponse.json({
+        error: existing.failure_message || "This agreement is already stored, but extraction failed.",
+        contractId: existing.contract_id,
+        status: existing.status,
+        retryable: existing.failure_code !== "file_missing",
+        duplicate: true,
+      }, { status: 409 });
+    }
+    return NextResponse.json({
+      error: "This agreement is already being processed.",
+      contractId: existing.contract_id,
+      status: existing.status,
+      duplicate: true,
+    }, { status: 409 });
   }
 
-  const env = await ensureContractSchema();
   const id = crypto.randomUUID();
-
   try {
-    const convertedValue = await env.AI.toMarkdown(
-      { name: value.name, blob: value },
-      { conversionOptions: { pdf: { metadata: false }, output: { format: "text" } } },
-    );
-    const converted = Array.isArray(convertedValue) ? convertedValue[0] : convertedValue;
-    if (!converted || converted.format === "error" || !("data" in converted)) {
-      throw new Error("The PDF could not be converted to readable contract text.");
+    const created = await createIngestionRecord({ id, workspaceId, contentHash });
+    if (!created) {
+      const raced = await findActiveIngestionByHash(workspaceId, contentHash);
+      if (raced?.status === "needs_review") {
+        const draft = await getDraftFromIngestion(raced.contract_id, workspaceId);
+        if (draft) return NextResponse.json({ contract: draft, duplicate: true, status: raced.status });
+      }
+      return NextResponse.json({
+        error: raced?.status === "confirmed" ? "This agreement has already been uploaded and confirmed." : "This agreement is already being processed.",
+        contractId: raced?.contract_id,
+        status: raced?.status ?? "processing",
+        duplicate: true,
+      }, { status: 409 });
     }
 
-    const context = buildRenewalContext(converted.data);
-    const aiResult = await env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
-      messages: [
-        {
-          role: "system",
-          content: "You extract vendor renewal terms for operational review. Never infer unsupported dates or amounts. Return an exact source excerpt. This is not legal advice. If a field is not supported by the supplied agreement text, use the schema's unknown sentinel.",
-        },
-        {
-          role: "user",
-          content: `Extract only renewal-decision facts from this vendor agreement.\n\n${context}`,
-        },
-      ],
-      response_format: { type: "json_schema", json_schema: extractionJsonSchema },
-      temperature: 0,
-      max_tokens: 1200,
-    });
-    const extracted = parseExtractionResponse(aiResult);
+    try {
+      await storeContractFile(id, workspaceId, value);
+    } catch (error) {
+      await deleteIngestionRecord(id, workspaceId);
+      throw error;
+    }
 
-    await storeContractFile(id, workspaceId, value);
-
-    return NextResponse.json({
-      contract: {
-        id,
-        fileName: value.name,
-        vendor: extracted.vendor || value.name.replace(/\.pdf$/i, ""),
-        agreement: extracted.agreement || "Vendor agreement",
-        renewalDate: normalizeSuggestedDate(extracted.renewal_date),
-        noticeDays: extracted.notice_days > 0 ? extracted.notice_days : 0,
-        annualExposure: extracted.annual_exposure >= 0 ? extracted.annual_exposure : 0,
-        owner: "You",
-        autoRenew: extracted.auto_renew === "yes",
-        source: {
-          page: extracted.source_page > 0 ? extracted.source_page : 0,
-          section: extracted.source_section,
-          clause: extracted.source_clause,
-        },
-        confidence: extracted.confidence,
-      },
-    });
+    const contract = await processContractIngestion(id, workspaceId);
+    return NextResponse.json({ contract, status: "needs_review" });
   } catch (error) {
-    console.error(JSON.stringify({ event: "contract_extraction_failed", contractId: id, message: error instanceof Error ? error.message : "Unknown error" }));
-    return NextResponse.json({ error: "We couldn't extract renewal terms from this PDF. Try another agreement or a text-based PDF." }, { status: 500 });
+    const ingestionError = error instanceof IngestionError ? error : null;
+    console.error(JSON.stringify({
+      event: "contract_upload_failed",
+      contractId: id,
+      code: ingestionError?.code ?? "upload_failed",
+      message: error instanceof Error ? error.message : String(error),
+    }));
+    return NextResponse.json({
+      error: ingestionError?.message || "We couldn't process this PDF. The file was not confirmed.",
+      contractId: id,
+      retryable: ingestionError?.retryable ?? false,
+      status: ingestionError ? "extraction_failed" : "upload_failed",
+    }, { status: ingestionError ? 422 : 500 });
   }
+}
+
+async function validatePdf(file: File) {
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    return NextResponse.json({ error: "TermBeacon currently accepts PDF agreements only." }, { status: 415 });
+  }
+  if (file.size <= 0 || file.size > MAX_FILE_BYTES) {
+    return NextResponse.json({ error: "PDFs must be larger than 0 bytes and no more than 10 MB." }, { status: 413 });
+  }
+
+  const signature = new TextDecoder("ascii").decode(await file.slice(0, 5).arrayBuffer());
+  if (signature !== "%PDF-") {
+    return NextResponse.json({ error: "That file does not appear to be a valid PDF." }, { status: 415 });
+  }
+  return null;
 }
