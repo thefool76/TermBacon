@@ -12,6 +12,8 @@ import {
   sessionCookieOptions,
 } from "@/lib/auth";
 
+type OAuthFailureReason = "oauth" | "state" | "token" | "profile" | "session";
+
 export async function GET(request: NextRequest) {
   const store = await cookies();
   const state = request.nextUrl.searchParams.get("state");
@@ -34,12 +36,20 @@ export async function GET(request: NextRequest) {
     clearOAuthCookies(response);
     return response;
   } catch (error) {
-    console.error(JSON.stringify({ event: "google_oauth_callback_failed", message: error instanceof Error ? error.message : "Unknown OAuth error" }));
-    return oauthFailure(request, "oauth");
+    const message = error instanceof Error ? error.message : "Unknown OAuth error";
+    const reason = classifyOAuthFailure(message);
+    console.error(JSON.stringify({ event: "google_oauth_callback_failed", reason, message }));
+    return oauthFailure(request, reason);
   }
 }
 
-function oauthFailure(request: NextRequest, reason: "oauth" | "state") {
+function classifyOAuthFailure(message: string): OAuthFailureReason {
+  if (/token exchange/i.test(message)) return "token";
+  if (/profile request|email is not verified|email.*verified/i.test(message)) return "profile";
+  return "session";
+}
+
+function oauthFailure(request: NextRequest, reason: OAuthFailureReason) {
   const response = NextResponse.redirect(new URL(`/sign-in?error=${reason}`, request.nextUrl.origin), 302);
   response.headers.set("Cache-Control", "no-store");
   clearOAuthCookies(response);
