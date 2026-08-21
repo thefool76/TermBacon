@@ -98,6 +98,7 @@ jobs:
             -d "{\"state\":\"$STATE\",\"context\":\"termbeacon/predeploy\",\"description\":\"$DESCRIPTION\"}"
 
       - name: Deploy to Cloudflare
+        id: worker_deploy
         run: npm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -105,6 +106,7 @@ jobs:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
 
       - name: Sync Google OAuth secrets when configured
+        id: oauth_secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -124,3 +126,30 @@ jobs:
           }));
           NODE
           npx wrangler secret bulk .auth-secrets.json
+
+      - name: Publish production deployment status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_OUTCOME: ${{ steps.worker_deploy.outcome }}
+          SECRETS_OUTCOME: ${{ steps.oauth_secrets.outcome }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          STATE="failure"
+          DESCRIPTION="Production deployment did not complete"
+          if [ "$DEPLOY_OUTCOME" != "success" ]; then
+            DESCRIPTION="Cloudflare Worker deployment failed"
+          elif [ "$SECRETS_OUTCOME" != "success" ]; then
+            DESCRIPTION="Worker deployed but OAuth secret sync failed"
+          else
+            STATE="success"
+            DESCRIPTION="Worker deployed and OAuth secrets synced"
+          fi
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$REPOSITORY/statuses/$SHA" \
+            -d "{\"state\":\"$STATE\",\"context\":\"termbeacon/deploy\",\"description\":\"$DESCRIPTION\"}"
